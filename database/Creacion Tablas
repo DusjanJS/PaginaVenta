@@ -1,3 +1,23 @@
+BEGIN;
+
+-- ---------------------------------------------------------------------
+-- 0. LIMPIEZA: elimina tablas y datos anteriores
+-- ---------------------------------------------------------------------
+DROP TABLE IF EXISTS evento            CASCADE;
+DROP TABLE IF EXISTS incidencia        CASCADE;
+DROP TABLE IF EXISTS pago              CASCADE;
+DROP TABLE IF EXISTS linea_pedido      CASCADE;
+DROP TABLE IF EXISTS pedido            CASCADE;
+DROP TABLE IF EXISTS linea_carrito     CASCADE;
+DROP TABLE IF EXISTS carrito           CASCADE;
+DROP TABLE IF EXISTS sesion            CASCADE;
+DROP TABLE IF EXISTS producto_conexion CASCADE;
+DROP TABLE IF EXISTS conexion          CASCADE;
+DROP TABLE IF EXISTS producto          CASCADE;
+DROP TABLE IF EXISTS categoria         CASCADE;
+DROP TABLE IF EXISTS cliente           CASCADE;
+DROP FUNCTION IF EXISTS set_fecha_actualizacion() CASCADE;
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- ---------------------------------------------------------------------
