@@ -75,7 +75,7 @@ const INFO_PAGES = {
       {
         q: '¿Puedo pagar a plazos?',
         a:
-          'Aceptamos PayPal, Visa y Mastercard. Para pedidos superiores a 500 € consulta con nuestro equipo las opciones de financiación disponibles.',
+          'El prototipo permite simular un pago con PayPal. No hay cobros reales ni financiación.',
       },
       {
         q: '¿Hacéis envíos internacionales fuera de Portugal?',
@@ -144,7 +144,7 @@ const INFO_PAGES = {
       {
         heading: 'Pago',
         body:
-          'Aceptamos PayPal, Visa y Mastercard. El cargo se realiza en el momento de confirmar el pedido, a través de pasarelas de pago seguras y encriptadas.',
+          'El pago se simula con PayPal después de revisar el pedido. Este prototipo no se conecta a una pasarela ni realiza cargos.',
       },
       {
         heading: 'Responsabilidad',

@@ -30,7 +30,7 @@ export default function Soporte() {
         <div className="section-head">
           <p className="eyebrow">Soporte</p>
           <h1 className="h-xl">¿En qué te ayudamos?</h1>
-          <p className="lead">Cuéntanos tu consulta o incidencia. Al enviarla se registra un evento <code>support.requested</code>.</p>
+          <p className="lead">Cuéntanos tu consulta o incidencia y te ayudaremos a encontrar una solución.</p>
         </div>
 
         {ticket && (

@@ -9,18 +9,17 @@ import { useCart } from '../context/CartContext.jsx'
 import { trackEvent } from '../lib/events.js'
 import { eur } from '../lib/format.js'
 
-export default function Producto() {
+function Producto() {
   const { slug } = useParams()
   const product = getProductBySlug(slug)
-  const { addItem } = useCart()
+  const { addItem, getAvailableStock, openCart } = useCart()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const [selectedVariantId, setSelectedVariantId] = useState(null)
 
   useEffect(() => {
     if (product) trackEvent('product.viewed', { productId: product.id, sku: product.sku, category: product.category })
-    setQty(1)
-    setAdded(false)
-  }, [product?.id])
+  }, [product])
 
   if (!product) {
     return (
@@ -35,9 +34,15 @@ export default function Producto() {
 
   const cat = CATEGORIES.find((c) => c.slug === product.category)
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
+  const selectedVariant = product.variants?.find((variant) => variant.id === selectedVariantId) ?? null
+  const stock = getAvailableStock(product.id, selectedVariantId)
+  const colorOptions = [
+    { id: null, color: product.color, colorHex: product.colorHex, stock: product.stock },
+    ...(product.variants ?? []),
+  ].filter((option) => option.color)
 
   const add = () => {
-    addItem(product, qty)
+    if (!addItem(product, qty, selectedVariant)) return
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -63,21 +68,47 @@ export default function Producto() {
             <p className="pdp-price">{eur(product.price)} <small>IVA incluido</small></p>
             <p className="pdp-desc">{product.description}</p>
 
-            <p className={'stock ' + (product.stock <= 5 ? 'low' : '')}>
-              {product.stock === 0 ? 'Sin stock' : product.stock <= 5 ? `Últimas ${product.stock} unidades` : 'En stock · envío en 24–48 h'}
+            {colorOptions.length > 0 && (
+              <fieldset className="variant-picker">
+                <legend>Color: <strong>{selectedVariant?.color ?? product.color}</strong></legend>
+                <div className="variant-options">
+                  {colorOptions.map((option) => {
+                    const optionStock = getAvailableStock(product.id, option.id)
+                    const selected = option.id === selectedVariantId
+                    return (
+                      <button
+                        key={option.id ?? 'original'}
+                        type="button"
+                        className={selected ? 'selected' : ''}
+                        aria-pressed={selected}
+                        disabled={optionStock === 0}
+                        onClick={() => { setSelectedVariantId(option.id); setQty(1); setAdded(false) }}
+                      >
+                        <span className="color-swatch" style={{ backgroundColor: option.colorHex }} />
+                        <span>{option.color}</span>
+                        <small>{optionStock}</small>
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+            )}
+
+            <p className={'stock-count ' + (stock <= 5 ? 'low' : '')}>
+              <span>Stock disponible</span><strong>{stock}</strong><small>Envío en 24-48 h</small>
             </p>
 
             <div className="pdp-buy">
               <div className="qty" role="group" aria-label="Cantidad">
-                <button onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Restar">−</button>
+                <button disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Restar">−</button>
                 <span>{qty}</span>
-                <button onClick={() => setQty((q) => Math.min(product.stock, q + 1))} aria-label="Sumar">+</button>
+                <button disabled={qty >= stock} onClick={() => setQty((q) => Math.min(stock, q + 1))} aria-label="Sumar">+</button>
               </div>
-              <button className="btn btn-accent btn-lg" onClick={add} disabled={product.stock === 0}>
+              <button className={`btn btn-lg ${added ? 'added' : 'btn-accent'}`} onClick={add} disabled={stock === 0}>
                 {added ? <><Check size={18} /> Añadido</> : 'Añadir al carrito'}
               </button>
             </div>
-            {added && <p className="added-note"><Link to="/carrito">Ver carrito</Link></p>}
+            {added && <p className="added-note"><button type="button" className="text-button" onClick={openCart}>Ver carrito</button></p>}
 
             <ul className="perks">
               <li><Truck size={18} /> Envío gratis en pedidos de más de 300 €</li>
@@ -86,8 +117,7 @@ export default function Producto() {
           </div>
         </div>
 
-        <div className="specs">
-          <h2 className="h-md">Especificaciones</h2>
+        <div className="specs"><details open><summary>Características y especificaciones</summary>
           <table>
             <tbody>
               {Object.entries(product.specs).map(([k, v]) => (
@@ -95,7 +125,10 @@ export default function Producto() {
               ))}
               <tr><th scope="row">Referencia</th><td>{product.sku}</td></tr>
             </tbody>
-          </table>
+          </table></details>
+          <details><summary>Compatibilidad y conexiones</summary><p>{product.compatibility}</p><p>Comprueba las conexiones de tu equipo antes de elegir. <Link to="/soporte">Consultar compatibilidad</Link></p></details>
+          <details><summary>Lo más destacado</summary><ul className="feature-list">{(product.features ?? Object.entries(product.specs).map(([k,v]) => `${k}: ${v}`)).map(f => <li key={f}><Check size={16}/>{f}</li>)}</ul></details>
+          <details><summary>Entrega y cuidados</summary><p>Envío estándar en 24-48 horas laborables. Envío gratuito a partir de 300 € después de descuentos.</p><p>{product.category === 'vinilos' ? 'Guarda tus discos en posición vertical y utiliza un cepillo adecuado antes de cada escucha.' : 'Coloca el equipo sobre una superficie estable y sigue las indicaciones de su manual.'}</p></details>
         </div>
 
         {related.length > 0 && (
@@ -109,4 +142,8 @@ export default function Producto() {
       </div>
     </section>
   )
+}
+export default function ProductoRoute() {
+  const { slug } = useParams()
+  return <Producto key={slug} />
 }

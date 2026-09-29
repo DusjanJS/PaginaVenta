@@ -3,7 +3,6 @@ import { ChevronRight, Music2, BadgeCheck, MonitorSpeaker, PackageCheck } from '
 import ImageSlot from '../components/ImageSlot.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import { CATEGORIES, PRODUCTS } from '../data/products.js'
-import { useAuth } from '../context/AuthContext.jsx'
 
 const WHY = [
   { icon: Music2, title: 'Sonido analógico', text: 'Seleccionamos cada producto por su calidad de sonido, no por su precio de venta.' },
@@ -13,8 +12,7 @@ const WHY = [
 ]
 
 export default function Home() {
-  const { user } = useAuth()
-  const featured = PRODUCTS.filter((p) => p.featured).slice(0, 8)
+  const featured = PRODUCTS.filter((p) => p.featured).slice(0, 4)
 
   return (
     <>
@@ -22,30 +20,20 @@ export default function Home() {
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow">Audio analógico</p>
-            <h1>El sonido que se toca con las manos.</h1>
+            <p className="eyebrow">Audio vintage premium</p>
+            <h1>El sonido de<br /><em>otra época.</em></h1>
             <p className="hero-text">
-              Tocadiscos, altavoces, auriculares y vinilos elegidos por cómo suenan.
+              Descubre tocadiscos, vinilos y audio Hi-Fi para volver a escuchar la música como antes.
             </p>
             <div className="hero-actions">
-              <Link to="/catalogo" className="btn btn-accent">Ver catálogo</Link>
-              <Link to="/catalogo/tocadiscos" className="btn btn-ghost">Tocadiscos</Link>
+              <Link to="/catalogo" className="btn btn-accent">Explorar catálogo</Link>
+              <Link to="/catalogo/tocadiscos" className="btn btn-ghost">Ver tocadiscos</Link>
             </div>
           </div>
           {/* 👉 Imagen del hero: public/img/hero/hero.jpg */}
-          <ImageSlot className="hero-img" src="/img/hero/hero.jpg" alt="Tocadiscos en una sala" />
+
         </div>
       </section>
-
-      {/* BANNER DE DESCUENTO */}
-      {!user && (
-        <div className="promo">
-          <div className="promo-inner">
-            <span>🎵 Inicia sesión y obtén un <strong>10% de descuento</strong> en tu primer pedido</span>
-            <Link to="/login" className="btn btn-white btn-sm">Iniciar sesión</Link>
-          </div>
-        </div>
-      )}
 
       {/* CATEGORÍAS */}
       <section className="section section-light">
@@ -114,8 +102,8 @@ export default function Home() {
             </p>
             <Link to="/catalogo/vinilos" className="btn btn-accent">Descubrir vinilos</Link>
           </div>
-          {/* 👉 Imagen: public/img/experiencia/experiencia.jpg */}
-          <ImageSlot className="exp-img" src="/img/experiencia/experiencia.jpg" alt="Guitarra y vinilo" />
+          {/* 👉 Imagen: publichttps://images.unsplash.com/photo-1471478331149-c72f17e33c73?w=800&h=600&fit=crop&auto=format */}
+          <ImageSlot className="exp-img" src="https://images.unsplash.com/photo-1471478331149-c72f17e33c73?w=800&h=600&fit=crop&auto=format" alt="Guitarra y vinilo" />
         </div>
       </section>
             {/* CTA FINAL */}

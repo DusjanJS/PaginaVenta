@@ -1,4 +1,4 @@
-// PERSISTENCIA de pedidos, pagos e incidencias (localStorage).
+// Persistencia temporal de pedidos, pagos e incidencias durante la pestaña actual.
 // Está aislado en este archivo para poder cambiarlo por llamadas a una API real.
 import { trackEvent } from './events.js'
 
@@ -15,12 +15,12 @@ export const ORDER_STATUS = {
   con_incidencia: 'Con incidencia',
 }
 
-const read = (k) => { try { return JSON.parse(localStorage.getItem(k)) ?? [] } catch { return [] } }
-const write = (k, v) => localStorage.setItem(k, JSON.stringify(v))
+const read = (k) => { try { return JSON.parse(sessionStorage.getItem(k)) ?? [] } catch { return [] } }
+const write = (k, v) => sessionStorage.setItem(k, JSON.stringify(v))
 
 function nextOrderId() {
-  const n = (Number(localStorage.getItem(COUNTER)) || 1000) + 1
-  localStorage.setItem(COUNTER, String(n))
+  const n = (Number(sessionStorage.getItem(COUNTER)) || 1000) + 1
+  sessionStorage.setItem(COUNTER, String(n))
   return `UC-${new Date().getFullYear()}-${String(n).padStart(5, '0')}`
 }
 
@@ -33,7 +33,7 @@ export function createOrder({ customer, items, totals }) {
     createdAt: new Date().toISOString(),
     status: 'creado',
     customer,
-    lines: items.map((i) => ({ productId: i.id, name: i.name, brand: i.brand, unitPrice: i.price, qty: i.qty })),
+    lines: items.map((i) => ({ productId: i.productId, cartKey: i.cartKey, variantId: i.variantId, color: i.color, name: i.name, brand: i.brand, image: i.image, slug: i.slug, unitPrice: i.price, qty: i.qty })),
     totals,
     payment: null,
   }
@@ -78,5 +78,5 @@ export function createTicket({ name, email, orderId, subject, message }) {
 }
 
 export function clearAll() {
-  ;[ORDERS, TICKETS, COUNTER].forEach((k) => localStorage.removeItem(k))
+  ;[ORDERS, TICKETS, COUNTER].forEach((k) => sessionStorage.removeItem(k))
 }

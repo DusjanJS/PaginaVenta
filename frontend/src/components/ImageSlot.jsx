@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react'
-import { ImagePlus } from 'lucide-react'
+import { useState } from 'react'
+import { Disc3 } from 'lucide-react'
 
 export default function ImageSlot({ src, alt = '', className = '', fit = 'cover' }) {
-  const [failed, setFailed] = useState(!src)
-  useEffect(() => setFailed(!src), [src])
+  const [failedSrc, setFailedSrc] = useState(null)
 
-  if (failed) {
+  if (!src || failedSrc === src) {
     return (
-      <div className={`img-slot ${className}`} role="img" aria-label={alt || 'Imagen pendiente'}>
-        <ImagePlus size={26} strokeWidth={1.5} />
-        <span>{src ? `public${src}` : 'Imagen pendiente'}</span>
+      <div className={`image-unavailable ${className}`} role="img" aria-label={alt || 'Imagen pendiente'}>
+        <Disc3 size={26} strokeWidth={1.5} />
+        <strong>{alt}</strong><span>Imagen no disponible</span>
       </div>
     )
   }
@@ -19,7 +18,7 @@ export default function ImageSlot({ src, alt = '', className = '', fit = 'cover'
       src={src}
       alt={alt}
       style={{ objectFit: fit }}
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
       loading="lazy"
     />
   )

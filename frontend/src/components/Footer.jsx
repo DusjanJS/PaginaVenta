@@ -20,8 +20,7 @@ export default function Footer() {
           </div>
 
           <p className="footer-text">
-            Tienda ficticia de audio analógico creada para la asignatura
-            Soluciones Informáticas para la Empresa (UCAM).
+            El sonido de otra época.
           </p>
         </div>
 
@@ -58,12 +57,6 @@ export default function Footer() {
             </li>
 
             <li>
-              <Link to="/soporte">
-                Información de envíos
-              </Link>
-            </li>
-
-            <li>
               <Link to="/info/devoluciones">
                 Devoluciones
               </Link>
@@ -81,17 +74,7 @@ export default function Footer() {
               </Link>
             </li>
 
-            <li>
-              <Link to="/carrito">
-                Mi carrito
-              </Link>
-            </li>
 
-            <li>
-              <Link to="/login">
-                Cuenta de prueba
-              </Link>
-            </li>
 
             <li>
               <Link to="/admin">

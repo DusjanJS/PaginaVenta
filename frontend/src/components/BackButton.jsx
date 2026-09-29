@@ -6,6 +6,7 @@ export default function BackButton() {
 
   return (
     <button
+      type="button"
       onClick={() => navigate(-1)}
       className="back-button"
       aria-label="Volver atrás"
