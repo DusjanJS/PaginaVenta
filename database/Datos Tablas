@@ -1,0 +1,393 @@
+-- =====================================================================
+--  UCAM STEREO — 03 · RELLENAR LAS TABLAS CON DATOS (PostgreSQL / Supabase)
+--  Soluciones Informáticas para la Empresa — Tarea 1
+--
+--  Inserta todos los datos. Las tablas deben estar vacías: ejecutar después de
+--  01_borrar.sql y 02_estructura.sql (si se ejecuta dos veces, falla sin cambiar nada).
+--
+--  Origen de los datos:
+--    · Catálogo (categorías, productos, conexiones) y cuentas demo:
+--      frontend/src/data/products.js y frontend/src/context/AuthContext.jsx
+--    · Clientes de ejemplo, pedidos, pagos, incidencias, sesiones y eventos:
+--      FICTICIOS, con las reglas de frontend/src/lib/pricing.js
+--      (IVA 21 % incluido, 10 % de bienvenida el primer mes, envío 6,90 € si < 300 €).
+-- =====================================================================
+
+BEGIN;
+
+-- ---------------------------------------------------------------------
+-- 1. CATÁLOGO
+-- ---------------------------------------------------------------------
+INSERT INTO categoria (slug, nombre, descripcion, cta, imagen, orden) VALUES
+('vinilos', 'Vinilos', 'Clásicos y modernos en el soporte que los hizo eternos.', 'Explorar vinilos', '/img/referencia/foto-6.webp', 1),
+('tocadiscos', 'Tocadiscos', 'El ritual de poner un disco, de principio a fin.', 'Ver tocadiscos', '/img/referencia/foto-0.webp', 2),
+('altavoces', 'Altavoces', 'Que el sonido llene la sala como merece.', 'Ver altavoces', '/img/referencia/foto-3.webp', 3),
+('auriculares', 'Auriculares', 'Solo tú, la música y ninguna distracción.', 'Ver auriculares', '/img/referencia/foto-5.webp', 4);
+
+INSERT INTO producto (id_categoria, slug, sku, nombre, marca, descripcion, precio, stock,
+                      imagen, caracteristicas, especificaciones, compatibilidad,
+                      valoracion, num_resenas, etiqueta, destacado) VALUES
+((SELECT id_categoria FROM categoria WHERE slug = 'tocadiscos'),
+ 'audio-technica-at-lp120xusb', 'AT-LP120XUSB', 'AT-LP120XUSB', 'Audio-Technica',
+ 'Tocadiscos de tracción directa con salida USB para digitalizar tu colección. Plato de aluminio, control de tono y pitch ajustable.',
+ 349, 14, '/img/referencia/foto-0.webp',
+ '["Digitaliza tu colección a través de la salida USB.","Selecciona entre tres velocidades de reproducción.","Conecta por RCA gracias al preamplificador integrado."]'::jsonb,
+ '{"Tracción":"Directa","Velocidades":"33 1/3, 45 y 78 rpm","Preamplificador":"Phono/Line integrado","Conexión":"RCA + USB","Peso":"10,8 kg"}'::jsonb,
+ 'Compatible con amplificadores y altavoces activos con entrada RCA o línea.',
+ 5, 234, 'Más vendido', TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'tocadiscos'),
+ 'sony-ps-lx310bt', 'PS-LX310BT', 'PS-LX310BT', 'Sony',
+ 'Tocadiscos automático de correa con Bluetooth para enviar el sonido a auriculares o altavoces inalámbricos.',
+ 249, 22, '/img/referencia/foto-7.avif',
+ '["Inicia la reproducción con el funcionamiento automático.","Escucha sin cables con altavoces o auriculares Bluetooth.","Alterna entre 33 1/3 y 45 rpm según el disco."]'::jsonb,
+ '{"Tracción":"Correa","Velocidades":"33 1/3 y 45 rpm","Preamplificador":"Integrado","Conexión":"RCA + Bluetooth","Peso":"4,1 kg"}'::jsonb,
+ 'Compatible con altavoces y auriculares Bluetooth.',
+ 4, 189, NULL, TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'tocadiscos'),
+ 'pro-ject-debut-carbon-evo', 'DEBUT-CARBON-EVO', 'Debut Carbon EVO', 'Pro-Ject',
+ 'Brazo de carbono de una pieza, plato de 8 mm con alta inercia y cápsula Sumiko Rainier premontada. Cambio de velocidad electrónico.',
+ 599, 6, '/img/referencia/foto-1.jpg',
+ '["Brazo de carbono y cápsula premontada.","Cambio electrónico de velocidad.","Comprueba si tu amplificador dispone de entrada phono."]'::jsonb,
+ '{"Tracción":"Correa","Velocidades":"33 1/3 y 45 rpm","Cápsula":"Sumiko Rainier","Brazo":"Carbono 8,6\"","Peso":"5,5 kg"}'::jsonb,
+ 'Requiere preamplificador phono si el amplificador no lo incluye.',
+ 5, 97, 'Premium', TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'altavoces'),
+ 'edifier-r1280db', 'R1280DB', 'R1280DB', 'Edifier',
+ 'Monitores activos de estantería con entradas ópticas, coaxiales, RCA y Bluetooth. Acabado en madera y mando a distancia.',
+ 149, 40, '/img/referencia/foto-2.webp',
+ '["Amplificación integrada para una instalación sencilla.","Varias entradas para conectar fuentes digitales y analógicas.","Control a distancia y acabado en madera."]'::jsonb,
+ '{"Potencia":"42 W RMS","Respuesta":"55 Hz – 20 kHz","Conexión":"Óptica, coaxial, RCA, Bluetooth 5.0","Tipo":"Activos 2.0","Peso":"6,0 kg (par)"}'::jsonb,
+ 'Compatible con cualquier tocadiscos con preamplificador integrado.',
+ 5, 312, NULL, TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'altavoces'),
+ 'klipsch-r-41pm', 'R-41PM', 'R-41PM', 'Klipsch',
+ 'Altavoces amplificados con bocina Tractrix y woofer de cobre de 4". Entrada phono integrada para conectar el tocadiscos directamente.',
+ 279, 2, '/img/productos/r-41pm.jpg',
+ '["Entrada phono para conectar directamente un tocadiscos.","Amplificación integrada y conexión Bluetooth.","Bocina Tractrix y woofer de cobre de 4 pulgadas."]'::jsonb,
+ '{"Potencia":"70 W RMS","Respuesta":"54 Hz – 21 kHz","Conexión":"Phono, RCA, USB, Bluetooth","Tipo":"Activos 2.0","Peso":"10,4 kg (par)"}'::jsonb,
+ 'Entrada phono: conecta tocadiscos sin preamplificador.',
+ 5, 141, 'Últimas 2', TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'auriculares'),
+ 'meze-99-classics', '99-CLASSICS', '99 Classics', 'Meze Audio',
+ 'Auriculares cerrados con almohadillas de piel y estructura de nogal. Cable desmontable, sonido cálido y musical.',
+ 309, 9, '/img/referencia/foto-5.webp',
+ '["Diseño cerrado para una escucha personal.","Copas de nogal y cable desmontable.","Conexión mediante jack de 3,5 o 6,3 mm."]'::jsonb,
+ '{"Tipo":"Circumaurales cerrados","Impedancia":"32 Ω","Respuesta":"10 Hz – 25 kHz","Conexión":"Jack 3,5 mm / 6,3 mm","Peso":"260 g"}'::jsonb,
+ 'Compatible con amplificadores de auriculares y salidas de 3,5 mm.',
+ 5, 88, 'Premium', TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'auriculares'),
+ 'sennheiser-hd-599', 'HD-599', 'HD 599', 'Sennheiser',
+ 'Auriculares abiertos de referencia para escucha larga y cómoda. Sonido amplio y natural.',
+ 129, 25, '/img/productos/hd-599.jpg',
+ '["Diseño abierto para una escena sonora amplia.","Pensados para sesiones largas de escucha en casa.","Conexión por cable a tu amplificador o salida de auriculares."]'::jsonb,
+ '{"Tipo":"Circumaurales abiertos","Impedancia":"50 Ω","Respuesta":"12 Hz – 38,5 kHz","Conexión":"Jack 3,5 mm / 6,3 mm","Peso":"250 g"}'::jsonb,
+ 'Compatible con cualquier amplificador o salida de auriculares.',
+ 4, 203, NULL, FALSE),
+((SELECT id_categoria FROM categoria WHERE slug = 'vinilos'),
+ 'dark-side-of-the-moon-50-aniversario', 'VIN-DSOTM-50', 'The Dark Side of the Moon (50 Aniversario)', 'Pink Floyd',
+ 'Reedición en vinilo de 180 g del álbum de 1973 en vinilo de colores, con póster y pegatinas.',
+ 44.99, 12, '/img/productos/dsotm.jpg',
+ '["Reedición del álbum de 1973.","Vinilo de 180 gramos con póster y pegatinas.","Reproducción a 33 1/3 rpm."]'::jsonb,
+ '{"Formato":"LP 12\"","Peso":"180 g","Año":"1973 (reedición 2023)","Género":"Rock progresivo","Discos":"1"}'::jsonb,
+ 'Reproducible a 33 1/3 rpm en cualquier tocadiscos.',
+ 5, 176, 'Edición limitada', TRUE),
+((SELECT id_categoria FROM categoria WHERE slug = 'vinilos'),
+ 'kind-of-blue-vinilo', 'VIN-KOB-180', 'Kind of Blue', 'Miles Davis',
+ 'Clásico del jazz modal en vinilo de 180 g con prensado de alta fidelidad.',
+ 27.99, 18, '/img/productos/kind-of-blue.jpg',
+ '["Álbum clásico del jazz modal de Miles Davis.","Edición en vinilo de 180 gramos.","Reproducción a 33 1/3 rpm."]'::jsonb,
+ '{"Formato":"LP 12\"","Peso":"180 g","Año":"1959","Género":"Jazz","Discos":"1"}'::jsonb,
+ 'Reproducible a 33 1/3 rpm en cualquier tocadiscos.',
+ 5, 121, 'Vintage', FALSE),
+((SELECT id_categoria FROM categoria WHERE slug = 'vinilos'),
+ 'kit-limpieza-vinilos', 'ACC-CLEAN-01', 'Kit de limpieza para vinilos', 'UCAM Stereo',
+ 'Cepillo de fibra de carbono, líquido limpiador de 250 ml y paño de microfibra.',
+ 24.9, 60, '/img/productos/kit-limpieza.jpg',
+ '["Cepillo de fibra de carbono para retirar polvo superficial.","Incluye líquido limpiador y paño de microfibra.","Compatible con discos de 7, 10 y 12 pulgadas."]'::jsonb,
+ '{"Contenido":"Cepillo + líquido 250 ml + paño","Uso":"Discos de 7\", 10\" y 12\""}'::jsonb,
+ 'Apto para vinilos y cápsulas.',
+ 4, 54, NULL, FALSE);
+
+-- Conexiones (sacadas del campo "Conexión" de las especificaciones)
+INSERT INTO conexion (nombre) VALUES
+('RCA'), ('USB'), ('Bluetooth'), ('Óptica'), ('Coaxial'), ('Phono'), ('Jack 3,5 mm'), ('Jack 6,3 mm');
+
+INSERT INTO producto_conexion (id_producto, id_conexion)
+SELECT p.id_producto, c.id_conexion
+FROM (VALUES
+    ('AT-LP120XUSB', 'RCA'),
+    ('AT-LP120XUSB', 'USB'),
+    ('PS-LX310BT', 'RCA'),
+    ('PS-LX310BT', 'Bluetooth'),
+    ('R1280DB', 'Óptica'),
+    ('R1280DB', 'Coaxial'),
+    ('R1280DB', 'RCA'),
+    ('R1280DB', 'Bluetooth'),
+    ('R-41PM', 'Phono'),
+    ('R-41PM', 'RCA'),
+    ('R-41PM', 'USB'),
+    ('R-41PM', 'Bluetooth'),
+    ('99-CLASSICS', 'Jack 3,5 mm'),
+    ('99-CLASSICS', 'Jack 6,3 mm'),
+    ('HD-599', 'Jack 3,5 mm'),
+    ('HD-599', 'Jack 6,3 mm')
+) AS v(sku, conexion)
+JOIN producto p ON p.sku    = v.sku
+JOIN conexion c ON c.nombre = v.conexion;
+
+-- ---------------------------------------------------------------------
+-- 2. CLIENTES Y SESIONES
+--    Cuentas demo del frontend (cliente@ucam.test / demo1234, admin@ucam.test / admin1234).
+--    Clientes ficticios registrados: contraseña 'clave12345'. Invitados: sin contraseña.
+-- ---------------------------------------------------------------------
+INSERT INTO cliente (nombre, apellidos, email, telefono, password_hash, rol, registrado,
+                     descuento_bienvenida_usado, newsletter, fecha_creacion) VALUES
+('Cliente', 'Demo', 'cliente@ucam.test', '+34 600 100 001', crypt('demo1234', gen_salt('bf')), 'cliente', TRUE, TRUE, TRUE, '2026-08-15 10:00:00+02'),
+('Admin', 'Demo', 'admin@ucam.test', '+34 600 100 002', crypt('admin1234', gen_salt('bf')), 'admin', TRUE, FALSE, FALSE, '2026-08-01 09:00:00+02'),
+('Lucía', 'Fernández Ortega', 'lucia.fernandez@example.com', '+34 611 223 344', crypt('clave12345', gen_salt('bf')), 'cliente', TRUE, TRUE, TRUE, '2026-07-05 18:30:00+02'),
+('Marcos', 'Ruiz Belmonte', 'marcos.ruiz@example.com', '+34 622 334 455', crypt('clave12345', gen_salt('bf')), 'cliente', TRUE, TRUE, FALSE, '2026-09-10 20:15:00+02'),
+('Elena', 'Sánchez Pardo', 'elena.sanchez@example.com', '+34 633 445 566', crypt('clave12345', gen_salt('bf')), 'cliente', TRUE, TRUE, TRUE, '2026-09-19 11:40:00+02'),
+('Javier', 'Molina Cano', 'javier.molina@example.com', '+34 644 556 677', NULL, 'cliente', FALSE, FALSE, FALSE, '2026-09-02 17:05:00+02'),
+('Carmen', 'Navarro Gil', 'carmen.navarro@example.com', '+34 655 667 788', NULL, 'cliente', FALSE, FALSE, TRUE, '2026-09-15 13:20:00+02');
+
+-- Sesiones de login: token_hash = SHA-256 de un token ficticio. Las 3 últimas siguen vigentes a 30/09/2026.
+INSERT INTO sesion (id_cliente, token_hash, fecha_creacion, fecha_expiracion)
+SELECT c.id_cliente, encode(digest('token-ficticio-' || v.email || '-' || v.creada, 'sha256'), 'hex'),
+       v.creada::timestamptz, v.expira::timestamptz
+FROM (VALUES
+    ('lucia.fernandez@example.com', '2026-09-05 10:20:00+02', '2026-09-12 10:20:00+02', 1),
+    ('elena.sanchez@example.com', '2026-09-21 19:30:00+02', '2026-09-28 19:30:00+02', 2),
+    ('cliente@ucam.test', '2026-09-28 18:25:00+02', '2026-10-05 18:25:00+02', 3),
+    ('marcos.ruiz@example.com', '2026-09-29 20:09:00+02', '2026-10-06 20:09:00+02', 4),
+    ('admin@ucam.test', '2026-09-30 09:00:00+02', '2026-10-07 09:00:00+02', 5)
+) AS v(email, creada, expira, n)
+JOIN cliente c ON c.email = v.email
+ORDER BY v.n;
+
+-- ---------------------------------------------------------------------
+-- 3. CARRITOS (los de invitados no tienen cliente: se identifican en el checkout)
+-- ---------------------------------------------------------------------
+INSERT INTO carrito (id_carrito, id_cliente, estado, fecha_creacion, fecha_actualizacion)
+SELECT v.id, c.id_cliente, v.estado, v.creado::timestamptz, v.actualizado::timestamptz
+FROM (VALUES
+    (1, 'lucia.fernandez@example.com', 'CONVERTIDO', '2026-07-08 18:32:30+02', '2026-07-08 18:40:00+02'),
+    (2, 'cliente@ucam.test', 'CONVERTIDO', '2026-08-20 12:07:30+02', '2026-08-20 12:15:00+02'),
+    (3, NULL, 'CONVERTIDO', '2026-09-02 16:57:30+02', '2026-09-02 17:05:00+02'),
+    (4, 'lucia.fernandez@example.com', 'CONVERTIDO', '2026-09-05 10:22:30+02', '2026-09-05 10:30:00+02'),
+    (5, 'marcos.ruiz@example.com', 'CONVERTIDO', '2026-09-12 21:02:30+02', '2026-09-12 21:10:00+02'),
+    (6, NULL, 'CONVERTIDO', '2026-09-15 13:12:30+02', '2026-09-15 13:20:00+02'),
+    (7, 'elena.sanchez@example.com', 'CONVERTIDO', '2026-09-21 19:37:30+02', '2026-09-21 19:45:00+02'),
+    (8, NULL, 'CONVERTIDO', '2026-09-27 20:22:30+02', '2026-09-27 20:30:00+02'),
+    (9, 'cliente@ucam.test', 'CONVERTIDO', '2026-09-28 18:27:30+02', '2026-09-28 18:35:00+02'),
+    (10, 'marcos.ruiz@example.com', 'ACTIVO', '2026-09-29 20:10:30+02', '2026-09-29 20:11:30+02'),
+    (11, 'elena.sanchez@example.com', 'ABANDONADO', '2026-09-23 12:03:30+02', '2026-09-23 12:03:30+02')
+) AS v(id, email, estado, creado, actualizado)
+LEFT JOIN cliente c ON c.email = v.email;
+
+SELECT setval(pg_get_serial_sequence('carrito', 'id_carrito'), (SELECT max(id_carrito) FROM carrito));
+
+INSERT INTO linea_carrito (id_carrito, id_producto, cantidad)
+SELECT v.id_carrito, p.id_producto, v.cantidad
+FROM (VALUES
+    (1, 'PS-LX310BT', 1, 1),
+    (1, 'VIN-DSOTM-50', 1, 2),
+    (2, 'DEBUT-CARBON-EVO', 1, 3),
+    (3, 'R1280DB', 2, 4),
+    (4, 'VIN-KOB-180', 2, 5),
+    (4, 'ACC-CLEAN-01', 1, 6),
+    (5, 'AT-LP120XUSB', 1, 7),
+    (5, '99-CLASSICS', 1, 8),
+    (6, 'HD-599', 1, 9),
+    (6, 'ACC-CLEAN-01', 1, 10),
+    (7, 'R-41PM', 1, 11),
+    (8, 'DEBUT-CARBON-EVO', 1, 12),
+    (9, 'R-41PM', 1, 13),
+    (9, 'ACC-CLEAN-01', 1, 14),
+    (10, 'HD-599', 1, 15),
+    (10, 'VIN-DSOTM-50', 1, 16),
+    (11, 'VIN-KOB-180', 1, 17)
+) AS v(id_carrito, sku, cantidad, n)
+JOIN producto p ON p.sku = v.sku
+ORDER BY v.n;
+
+-- ---------------------------------------------------------------------
+-- 4. PEDIDOS Y SUS LÍNEAS
+-- ---------------------------------------------------------------------
+INSERT INTO pedido (numero_pedido, id_cliente, id_carrito, estado,
+                    envio_nombre, envio_telefono, envio_direccion, envio_ciudad, envio_provincia, envio_codigopostal,
+                    subtotal, descuento, gastos_envio, total, tipo_iva, base_imponible, impuesto,
+                    fecha_creacion, fecha_actualizacion)
+SELECT v.numero, c.id_cliente, v.id_carrito, v.estado,
+       v.nombre, v.telefono, v.direccion, v.ciudad, v.provincia, v.cp,
+       v.subtotal, v.descuento, v.envio, v.total, 21.00, v.base, v.impuesto,
+       v.fecha::timestamptz, v.actualizacion::timestamptz
+FROM (VALUES
+    ('UC-2026-01001', 'lucia.fernandez@example.com', 1, 'entregado', 'Lucía Fernández Ortega', '+34 611 223 344', 'Calle de los Olmos 14, 2ºA', 'Murcia', 'Murcia', '30001', 293.99, 29.40, 6.90, 271.49, 224.37, 47.12, '2026-07-08 18:40:00+02', '2026-07-12 21:40:00+02', 1),
+    ('UC-2026-01002', 'cliente@ucam.test', 2, 'entregado', 'Cliente Demo', '+34 600 100 001', 'Avenida de la Libertad 8, 1ºB', 'Lorca', 'Murcia', '30800', 599.00, 59.90, 0.00, 539.10, 445.54, 93.56, '2026-08-20 12:15:00+02', '2026-08-24 15:15:00+02', 2),
+    ('UC-2026-01003', 'javier.molina@example.com', 3, 'entregado', 'Javier Molina Cano', '+34 644 556 677', 'Calle del Río 27', 'Cartagena', 'Murcia', '30201', 298.00, 0.00, 6.90, 304.90, 251.98, 52.92, '2026-09-02 17:05:00+02', '2026-09-06 20:05:00+02', 3),
+    ('UC-2026-01004', 'lucia.fernandez@example.com', 4, 'enviado', 'Lucía Fernández Ortega', '+34 611 223 344', 'Calle de los Olmos 14, 2ºA', 'Murcia', 'Murcia', '30001', 80.88, 0.00, 6.90, 87.78, 72.55, 15.23, '2026-09-05 10:30:00+02', '2026-09-06 13:30:00+02', 4),
+    ('UC-2026-01005', 'marcos.ruiz@example.com', 5, 'enviado', 'Marcos Ruiz Belmonte', '+34 622 334 455', 'Paseo de Gracia 45, 4ºC', 'Barcelona', 'Barcelona', '08007', 658.00, 65.80, 0.00, 592.20, 489.42, 102.78, '2026-09-12 21:10:00+02', '2026-09-14 00:10:00+02', 5),
+    ('UC-2026-01006', 'carmen.navarro@example.com', 6, 'cancelado', 'Carmen Navarro Gil', '+34 655 667 788', 'Calle Alcalá 102, 5ºD', 'Madrid', 'Madrid', '28009', 153.90, 0.00, 6.90, 160.80, 132.89, 27.91, '2026-09-15 13:20:00+02', '2026-09-15 15:20:00+02', 6),
+    ('UC-2026-01007', 'elena.sanchez@example.com', 7, 'pendiente_preparacion', 'Elena Sánchez Pardo', '+34 633 445 566', 'Calle Larios 9, 1ºA', 'Málaga', 'Málaga', '29005', 279.00, 27.90, 6.90, 258.00, 213.22, 44.78, '2026-09-21 19:45:00+02', '2026-09-21 22:45:00+02', 7),
+    ('UC-2026-01008', 'javier.molina@example.com', 8, 'con_incidencia', 'Javier Molina Cano', '+34 644 556 677', 'Calle del Río 27', 'Cartagena', 'Murcia', '30201', 599.00, 0.00, 0.00, 599.00, 495.04, 103.96, '2026-09-27 20:30:00+02', '2026-09-27 20:30:00+02', 8),
+    ('UC-2026-01009', 'cliente@ucam.test', 9, 'pagado_simulado', 'Cliente Demo', '+34 600 100 001', 'Avenida de la Libertad 8, 1ºB', 'Lorca', 'Murcia', '30800', 303.90, 0.00, 0.00, 303.90, 251.16, 52.74, '2026-09-28 18:35:00+02', '2026-09-28 18:35:00+02', 9)
+) AS v(numero, email, id_carrito, estado, nombre, telefono, direccion, ciudad, provincia, cp,
+         subtotal, descuento, envio, total, base, impuesto, fecha, actualizacion, n)
+JOIN cliente c ON c.email = v.email
+ORDER BY v.n;
+
+INSERT INTO linea_pedido (id_pedido, id_producto, nombre_producto, precio_unitario, cantidad)
+SELECT pe.id_pedido, p.id_producto, p.nombre, p.precio, v.cantidad
+FROM (VALUES
+    ('UC-2026-01001', 'PS-LX310BT', 1, 1),
+    ('UC-2026-01001', 'VIN-DSOTM-50', 1, 2),
+    ('UC-2026-01002', 'DEBUT-CARBON-EVO', 1, 3),
+    ('UC-2026-01003', 'R1280DB', 2, 4),
+    ('UC-2026-01004', 'VIN-KOB-180', 2, 5),
+    ('UC-2026-01004', 'ACC-CLEAN-01', 1, 6),
+    ('UC-2026-01005', 'AT-LP120XUSB', 1, 7),
+    ('UC-2026-01005', '99-CLASSICS', 1, 8),
+    ('UC-2026-01006', 'HD-599', 1, 9),
+    ('UC-2026-01006', 'ACC-CLEAN-01', 1, 10),
+    ('UC-2026-01007', 'R-41PM', 1, 11),
+    ('UC-2026-01008', 'DEBUT-CARBON-EVO', 1, 12),
+    ('UC-2026-01009', 'R-41PM', 1, 13),
+    ('UC-2026-01009', 'ACC-CLEAN-01', 1, 14)
+) AS v(numero, sku, cantidad, n)
+JOIN pedido   pe ON pe.numero_pedido = v.numero
+JOIN producto p  ON p.sku = v.sku
+ORDER BY v.n;
+
+-- ---------------------------------------------------------------------
+-- 5. PAGOS (PayPal simulado)
+-- ---------------------------------------------------------------------
+INSERT INTO pago (id_pedido, metodo, importe, resultado, referencia_pago, fecha_creacion)
+SELECT pe.id_pedido, 'paypal_simulado', pe.total, v.resultado, v.ref, v.fecha::timestamptz
+FROM (VALUES
+    ('UC-2026-01001', 'approved', 'PAY-F2AB9F', '2026-07-08 18:40:00+02', 1),
+    ('UC-2026-01002', 'approved', 'PAY-B4FF46', '2026-08-20 12:15:00+02', 2),
+    ('UC-2026-01003', 'approved', 'PAY-A6CD58', '2026-09-02 17:05:00+02', 3),
+    ('UC-2026-01004', 'approved', 'PAY-10A140', '2026-09-05 10:30:00+02', 4),
+    ('UC-2026-01005', 'approved', 'PAY-7D7210', '2026-09-12 21:10:00+02', 5),
+    ('UC-2026-01006', 'approved', 'PAY-A898BF', '2026-09-15 13:20:00+02', 6),
+    ('UC-2026-01007', 'approved', 'PAY-CE21BA', '2026-09-21 19:45:00+02', 7),
+    ('UC-2026-01008', 'failed', 'PAY-D2F233', '2026-09-27 20:30:00+02', 8),
+    ('UC-2026-01009', 'approved', 'PAY-98C0D6', '2026-09-28 18:35:00+02', 9)
+) AS v(numero, resultado, ref, fecha, n)
+JOIN pedido pe ON pe.numero_pedido = v.numero
+ORDER BY v.n;
+
+-- ---------------------------------------------------------------------
+-- 6. INCIDENCIAS (solicitudes de soporte)
+-- ---------------------------------------------------------------------
+INSERT INTO incidencia (codigo, id_pedido, nombre, email, asunto, descripcion, estado, fecha_creacion)
+SELECT v.codigo, pe.id_pedido, v.nombre, v.email, v.asunto, v.descripcion, 'abierta', v.fecha::timestamptz
+FROM (VALUES
+    ('INC-K3M9QZ', 'UC-2026-01006', 'Carmen Navarro Gil', 'carmen.navarro@example.com', 'Quiero cancelar mi pedido', 'Me equivoqué de auriculares al comprar. ¿Puedo cancelar el pedido y que me devuelvan el importe?', '2026-09-15 19:40:00+02', 1),
+    ('INC-7HD2XP', 'UC-2026-01008', 'Javier Molina Cano', 'javier.molina@example.com', 'El pago no se ha completado', 'Me aparece el pedido con incidencia y no sé si se ha cobrado. ¿Podéis revisarlo?', '2026-09-27 21:05:00+02', 2),
+    ('INC-Q8W4LN', 'UC-2026-01007', 'Elena Sánchez Pardo', 'elena.sanchez@example.com', 'Mi pedido no aparece como enviado', 'Hace cuatro días que hice el pedido y sigue en preparación. ¿Cuándo saldrá?', '2026-09-25 10:30:00+02', 3),
+    ('INC-B5T6RV', NULL, 'Marcos Ruiz Belmonte', 'marcos.ruiz@example.com', 'Duda de compatibilidad con mi amplificador', 'Mi amplificador no tiene entrada phono. ¿Necesito un previo para el tocadiscos que compré?', '2026-09-29 16:20:00+02', 4)
+) AS v(codigo, numero, nombre, email, asunto, descripcion, fecha, n)
+LEFT JOIN pedido pe ON pe.numero_pedido = v.numero
+ORDER BY v.n;
+
+-- ---------------------------------------------------------------------
+-- 7. EVENTOS (mismos tipos y payloads que genera src/lib/events.js)
+--    Los invitados y visitantes anónimos van sin cliente.
+-- ---------------------------------------------------------------------
+INSERT INTO evento (id_cliente, id_producto, id_pedido, session_id, tipo, fecha_creacion, datos_adicionales)
+SELECT c.id_cliente, p.id_producto, pe.id_pedido, v.sesion, v.tipo, v.fecha::timestamptz, v.datos::jsonb
+FROM (VALUES
+    ('lucia.fernandez@example.com', 'PS-LX310BT', NULL, 'ses_f2ab9fb2', 'product.viewed', '2026-07-08 18:32:00+02', '{"productId":"p002","sku":"PS-LX310BT","category":"tocadiscos"}', 1),
+    ('lucia.fernandez@example.com', 'PS-LX310BT', NULL, 'ses_f2ab9fb2', 'cart.item_added', '2026-07-08 18:32:30+02', '{"productId":"p002","sku":"PS-LX310BT","qty":1,"price":249}', 2),
+    ('lucia.fernandez@example.com', 'VIN-DSOTM-50', NULL, 'ses_f2ab9fb2', 'product.viewed', '2026-07-08 18:34:00+02', '{"productId":"p008","sku":"VIN-DSOTM-50","category":"vinilos"}', 3),
+    ('lucia.fernandez@example.com', 'VIN-DSOTM-50', NULL, 'ses_f2ab9fb2', 'cart.item_added', '2026-07-08 18:34:30+02', '{"productId":"p008","sku":"VIN-DSOTM-50","qty":1,"price":44.99}', 4),
+    ('lucia.fernandez@example.com', NULL, NULL, 'ses_f2ab9fb2', 'checkout.started', '2026-07-08 18:38:00+02', '{"items":2}', 5),
+    ('lucia.fernandez@example.com', NULL, 'UC-2026-01001', 'ses_f2ab9fb2', 'order.created', '2026-07-08 18:40:00+02', '{"orderId":"UC-2026-01001","total":271.49,"lines":2}', 6),
+    ('lucia.fernandez@example.com', NULL, 'UC-2026-01001', 'ses_f2ab9fb2', 'payment.simulated', '2026-07-08 18:40:01+02', '{"orderId":"UC-2026-01001","paymentId":"PAY-F2AB9F","result":"approved"}', 7),
+    ('admin@ucam.test', NULL, 'UC-2026-01001', 'ses_2e7d9cd9', 'order.status_changed', '2026-07-08 21:40:00+02', '{"orderId":"UC-2026-01001","from":"pagado_simulado","to":"pendiente_preparacion"}', 8),
+    ('admin@ucam.test', NULL, 'UC-2026-01001', 'ses_3b0fc132', 'order.status_changed', '2026-07-09 21:40:00+02', '{"orderId":"UC-2026-01001","from":"pendiente_preparacion","to":"enviado"}', 9),
+    ('admin@ucam.test', NULL, 'UC-2026-01001', 'ses_664f7450', 'order.status_changed', '2026-07-12 21:40:00+02', '{"orderId":"UC-2026-01001","from":"enviado","to":"entregado"}', 10),
+    ('cliente@ucam.test', 'DEBUT-CARBON-EVO', NULL, 'ses_b4ff464a', 'product.viewed', '2026-08-20 12:07:00+02', '{"productId":"p003","sku":"DEBUT-CARBON-EVO","category":"tocadiscos"}', 11),
+    ('cliente@ucam.test', 'DEBUT-CARBON-EVO', NULL, 'ses_b4ff464a', 'cart.item_added', '2026-08-20 12:07:30+02', '{"productId":"p003","sku":"DEBUT-CARBON-EVO","qty":1,"price":599}', 12),
+    ('cliente@ucam.test', NULL, NULL, 'ses_b4ff464a', 'checkout.started', '2026-08-20 12:13:00+02', '{"items":1}', 13),
+    ('cliente@ucam.test', NULL, 'UC-2026-01002', 'ses_b4ff464a', 'order.created', '2026-08-20 12:15:00+02', '{"orderId":"UC-2026-01002","total":539.1,"lines":1}', 14),
+    ('cliente@ucam.test', NULL, 'UC-2026-01002', 'ses_b4ff464a', 'payment.simulated', '2026-08-20 12:15:01+02', '{"orderId":"UC-2026-01002","paymentId":"PAY-B4FF46","result":"approved"}', 15),
+    ('admin@ucam.test', NULL, 'UC-2026-01002', 'ses_6d69fd51', 'order.status_changed', '2026-08-20 15:15:00+02', '{"orderId":"UC-2026-01002","from":"pagado_simulado","to":"pendiente_preparacion"}', 16),
+    ('admin@ucam.test', NULL, 'UC-2026-01002', 'ses_2b68abb0', 'order.status_changed', '2026-08-21 15:15:00+02', '{"orderId":"UC-2026-01002","from":"pendiente_preparacion","to":"enviado"}', 17),
+    ('admin@ucam.test', NULL, 'UC-2026-01002', 'ses_577650d2', 'order.status_changed', '2026-08-24 15:15:00+02', '{"orderId":"UC-2026-01002","from":"enviado","to":"entregado"}', 18),
+    (NULL, 'R1280DB', NULL, 'ses_a6cd58ef', 'product.viewed', '2026-09-02 16:57:00+02', '{"productId":"p004","sku":"R1280DB","category":"altavoces"}', 19),
+    (NULL, 'R1280DB', NULL, 'ses_a6cd58ef', 'cart.item_added', '2026-09-02 16:57:30+02', '{"productId":"p004","sku":"R1280DB","qty":2,"price":149}', 20),
+    (NULL, NULL, NULL, 'ses_a6cd58ef', 'checkout.started', '2026-09-02 17:03:00+02', '{"items":1}', 21),
+    (NULL, NULL, 'UC-2026-01003', 'ses_a6cd58ef', 'order.created', '2026-09-02 17:05:00+02', '{"orderId":"UC-2026-01003","total":304.9,"lines":1}', 22),
+    (NULL, NULL, 'UC-2026-01003', 'ses_a6cd58ef', 'payment.simulated', '2026-09-02 17:05:01+02', '{"orderId":"UC-2026-01003","paymentId":"PAY-A6CD58","result":"approved"}', 23),
+    ('admin@ucam.test', NULL, 'UC-2026-01003', 'ses_8be8e28e', 'order.status_changed', '2026-09-02 20:05:00+02', '{"orderId":"UC-2026-01003","from":"pagado_simulado","to":"pendiente_preparacion"}', 24),
+    (NULL, 'HD-599', NULL, 'ses_099de50a', 'product.viewed', '2026-09-03 11:02:00+02', '{"productId":"p007","sku":"HD-599","category":"auriculares"}', 25),
+    ('admin@ucam.test', NULL, 'UC-2026-01003', 'ses_5f9d837e', 'order.status_changed', '2026-09-03 20:05:00+02', '{"orderId":"UC-2026-01003","from":"pendiente_preparacion","to":"enviado"}', 26),
+    ('lucia.fernandez@example.com', 'VIN-KOB-180', NULL, 'ses_10a14035', 'product.viewed', '2026-09-05 10:22:00+02', '{"productId":"p009","sku":"VIN-KOB-180","category":"vinilos"}', 27),
+    ('lucia.fernandez@example.com', 'VIN-KOB-180', NULL, 'ses_10a14035', 'cart.item_added', '2026-09-05 10:22:30+02', '{"productId":"p009","sku":"VIN-KOB-180","qty":2,"price":27.99}', 28),
+    ('lucia.fernandez@example.com', 'ACC-CLEAN-01', NULL, 'ses_10a14035', 'product.viewed', '2026-09-05 10:24:00+02', '{"productId":"p010","sku":"ACC-CLEAN-01","category":"vinilos"}', 29),
+    ('lucia.fernandez@example.com', 'ACC-CLEAN-01', NULL, 'ses_10a14035', 'cart.item_added', '2026-09-05 10:24:30+02', '{"productId":"p010","sku":"ACC-CLEAN-01","qty":1,"price":24.9}', 30),
+    ('lucia.fernandez@example.com', NULL, NULL, 'ses_10a14035', 'checkout.started', '2026-09-05 10:28:00+02', '{"items":2}', 31),
+    ('lucia.fernandez@example.com', NULL, 'UC-2026-01004', 'ses_10a14035', 'order.created', '2026-09-05 10:30:00+02', '{"orderId":"UC-2026-01004","total":87.78,"lines":2}', 32),
+    ('lucia.fernandez@example.com', NULL, 'UC-2026-01004', 'ses_10a14035', 'payment.simulated', '2026-09-05 10:30:01+02', '{"orderId":"UC-2026-01004","paymentId":"PAY-10A140","result":"approved"}', 33),
+    ('admin@ucam.test', NULL, 'UC-2026-01004', 'ses_c3d3dfc6', 'order.status_changed', '2026-09-05 13:30:00+02', '{"orderId":"UC-2026-01004","from":"pagado_simulado","to":"pendiente_preparacion"}', 34),
+    ('admin@ucam.test', NULL, 'UC-2026-01004', 'ses_a0d56517', 'order.status_changed', '2026-09-06 13:30:00+02', '{"orderId":"UC-2026-01004","from":"pendiente_preparacion","to":"enviado"}', 35),
+    ('admin@ucam.test', NULL, 'UC-2026-01003', 'ses_54fc96dd', 'order.status_changed', '2026-09-06 20:05:00+02', '{"orderId":"UC-2026-01003","from":"enviado","to":"entregado"}', 36),
+    (NULL, 'PS-LX310BT', NULL, 'ses_68ea3041', 'product.viewed', '2026-09-08 16:45:00+02', '{"productId":"p002","sku":"PS-LX310BT","category":"tocadiscos"}', 37),
+    ('marcos.ruiz@example.com', 'AT-LP120XUSB', NULL, 'ses_7d7210df', 'product.viewed', '2026-09-12 21:02:00+02', '{"productId":"p001","sku":"AT-LP120XUSB","category":"tocadiscos"}', 38),
+    ('marcos.ruiz@example.com', 'AT-LP120XUSB', NULL, 'ses_7d7210df', 'cart.item_added', '2026-09-12 21:02:30+02', '{"productId":"p001","sku":"AT-LP120XUSB","qty":1,"price":349}', 39),
+    ('marcos.ruiz@example.com', '99-CLASSICS', NULL, 'ses_7d7210df', 'product.viewed', '2026-09-12 21:04:00+02', '{"productId":"p006","sku":"99-CLASSICS","category":"auriculares"}', 40),
+    ('marcos.ruiz@example.com', '99-CLASSICS', NULL, 'ses_7d7210df', 'cart.item_added', '2026-09-12 21:04:30+02', '{"productId":"p006","sku":"99-CLASSICS","qty":1,"price":309}', 41),
+    ('marcos.ruiz@example.com', NULL, NULL, 'ses_7d7210df', 'checkout.started', '2026-09-12 21:08:00+02', '{"items":2}', 42),
+    ('marcos.ruiz@example.com', NULL, 'UC-2026-01005', 'ses_7d7210df', 'order.created', '2026-09-12 21:10:00+02', '{"orderId":"UC-2026-01005","total":592.2,"lines":2}', 43),
+    ('marcos.ruiz@example.com', NULL, 'UC-2026-01005', 'ses_7d7210df', 'payment.simulated', '2026-09-12 21:10:01+02', '{"orderId":"UC-2026-01005","paymentId":"PAY-7D7210","result":"approved"}', 44),
+    ('admin@ucam.test', NULL, 'UC-2026-01005', 'ses_43f2f512', 'order.status_changed', '2026-09-13 00:10:00+02', '{"orderId":"UC-2026-01005","from":"pagado_simulado","to":"pendiente_preparacion"}', 45),
+    ('admin@ucam.test', NULL, 'UC-2026-01005', 'ses_be5273cf', 'order.status_changed', '2026-09-14 00:10:00+02', '{"orderId":"UC-2026-01005","from":"pendiente_preparacion","to":"enviado"}', 46),
+    (NULL, 'VIN-KOB-180', NULL, 'ses_6254b64d', 'product.viewed', '2026-09-14 09:30:00+02', '{"productId":"p009","sku":"VIN-KOB-180","category":"vinilos"}', 47),
+    (NULL, 'HD-599', NULL, 'ses_a898bf55', 'product.viewed', '2026-09-15 13:12:00+02', '{"productId":"p007","sku":"HD-599","category":"auriculares"}', 48),
+    (NULL, 'HD-599', NULL, 'ses_a898bf55', 'cart.item_added', '2026-09-15 13:12:30+02', '{"productId":"p007","sku":"HD-599","qty":1,"price":129}', 49),
+    (NULL, 'ACC-CLEAN-01', NULL, 'ses_a898bf55', 'product.viewed', '2026-09-15 13:14:00+02', '{"productId":"p010","sku":"ACC-CLEAN-01","category":"vinilos"}', 50),
+    (NULL, 'ACC-CLEAN-01', NULL, 'ses_a898bf55', 'cart.item_added', '2026-09-15 13:14:30+02', '{"productId":"p010","sku":"ACC-CLEAN-01","qty":1,"price":24.9}', 51),
+    (NULL, NULL, NULL, 'ses_a898bf55', 'checkout.started', '2026-09-15 13:18:00+02', '{"items":2}', 52),
+    (NULL, NULL, 'UC-2026-01006', 'ses_a898bf55', 'order.created', '2026-09-15 13:20:00+02', '{"orderId":"UC-2026-01006","total":160.8,"lines":2}', 53),
+    (NULL, NULL, 'UC-2026-01006', 'ses_a898bf55', 'payment.simulated', '2026-09-15 13:20:01+02', '{"orderId":"UC-2026-01006","paymentId":"PAY-A898BF","result":"approved"}', 54),
+    ('admin@ucam.test', NULL, 'UC-2026-01006', 'ses_3accdd3c', 'order.status_changed', '2026-09-15 15:20:00+02', '{"orderId":"UC-2026-01006","from":"pagado_simulado","to":"cancelado"}', 55),
+    (NULL, NULL, 'UC-2026-01006', 'ses_b9be0897', 'support.requested', '2026-09-15 19:40:00+02', '{"ticketId":"INC-K3M9QZ","orderId":"UC-2026-01006","subject":"Quiero cancelar mi pedido"}', 56),
+    (NULL, 'DEBUT-CARBON-EVO', NULL, 'ses_6148bae4', 'product.viewed', '2026-09-18 22:10:00+02', '{"productId":"p003","sku":"DEBUT-CARBON-EVO","category":"tocadiscos"}', 57),
+    ('elena.sanchez@example.com', 'R-41PM', NULL, 'ses_ce21baf9', 'product.viewed', '2026-09-21 19:37:00+02', '{"productId":"p005","sku":"R-41PM","category":"altavoces"}', 58),
+    ('elena.sanchez@example.com', 'R-41PM', NULL, 'ses_ce21baf9', 'cart.item_added', '2026-09-21 19:37:30+02', '{"productId":"p005","sku":"R-41PM","qty":1,"price":279}', 59),
+    ('elena.sanchez@example.com', NULL, NULL, 'ses_ce21baf9', 'checkout.started', '2026-09-21 19:43:00+02', '{"items":1}', 60),
+    ('elena.sanchez@example.com', NULL, 'UC-2026-01007', 'ses_ce21baf9', 'order.created', '2026-09-21 19:45:00+02', '{"orderId":"UC-2026-01007","total":258,"lines":1}', 61),
+    ('elena.sanchez@example.com', NULL, 'UC-2026-01007', 'ses_ce21baf9', 'payment.simulated', '2026-09-21 19:45:01+02', '{"orderId":"UC-2026-01007","paymentId":"PAY-CE21BA","result":"approved"}', 62),
+    ('admin@ucam.test', NULL, 'UC-2026-01007', 'ses_6f2d639e', 'order.status_changed', '2026-09-21 22:45:00+02', '{"orderId":"UC-2026-01007","from":"pagado_simulado","to":"pendiente_preparacion"}', 63),
+    ('elena.sanchez@example.com', 'VIN-KOB-180', NULL, 'ses_97242a4b', 'product.viewed', '2026-09-23 12:03:00+02', '{"productId":"p009","sku":"VIN-KOB-180","category":"vinilos"}', 64),
+    ('elena.sanchez@example.com', 'VIN-KOB-180', NULL, 'ses_97242a4b', 'cart.item_added', '2026-09-23 12:03:30+02', '{"productId":"p009","sku":"VIN-KOB-180","qty":1,"price":27.99}', 65),
+    (NULL, 'R1280DB', NULL, 'ses_4aeb265e', 'product.viewed', '2026-09-24 13:55:00+02', '{"productId":"p004","sku":"R1280DB","category":"altavoces"}', 66),
+    ('elena.sanchez@example.com', NULL, 'UC-2026-01007', 'ses_4e935145', 'support.requested', '2026-09-25 10:30:00+02', '{"ticketId":"INC-Q8W4LN","orderId":"UC-2026-01007","subject":"Mi pedido no aparece como enviado"}', 67),
+    (NULL, 'DEBUT-CARBON-EVO', NULL, 'ses_d2f233a8', 'product.viewed', '2026-09-27 20:22:00+02', '{"productId":"p003","sku":"DEBUT-CARBON-EVO","category":"tocadiscos"}', 68),
+    (NULL, 'DEBUT-CARBON-EVO', NULL, 'ses_d2f233a8', 'cart.item_added', '2026-09-27 20:22:30+02', '{"productId":"p003","sku":"DEBUT-CARBON-EVO","qty":1,"price":599}', 69),
+    (NULL, NULL, NULL, 'ses_d2f233a8', 'checkout.started', '2026-09-27 20:28:00+02', '{"items":1}', 70),
+    (NULL, NULL, 'UC-2026-01008', 'ses_d2f233a8', 'order.created', '2026-09-27 20:30:00+02', '{"orderId":"UC-2026-01008","total":599,"lines":1}', 71),
+    (NULL, NULL, 'UC-2026-01008', 'ses_d2f233a8', 'payment.simulated', '2026-09-27 20:30:01+02', '{"orderId":"UC-2026-01008","paymentId":"PAY-D2F233","result":"failed"}', 72),
+    (NULL, NULL, 'UC-2026-01008', 'ses_fc7b68d3', 'support.requested', '2026-09-27 21:05:00+02', '{"ticketId":"INC-7HD2XP","orderId":"UC-2026-01008","subject":"El pago no se ha completado"}', 73),
+    ('cliente@ucam.test', 'R-41PM', NULL, 'ses_98c0d6b1', 'product.viewed', '2026-09-28 18:27:00+02', '{"productId":"p005","sku":"R-41PM","category":"altavoces"}', 74),
+    ('cliente@ucam.test', 'R-41PM', NULL, 'ses_98c0d6b1', 'cart.item_added', '2026-09-28 18:27:30+02', '{"productId":"p005","sku":"R-41PM","qty":1,"price":279}', 75),
+    ('cliente@ucam.test', 'ACC-CLEAN-01', NULL, 'ses_98c0d6b1', 'product.viewed', '2026-09-28 18:29:00+02', '{"productId":"p010","sku":"ACC-CLEAN-01","category":"vinilos"}', 76),
+    ('cliente@ucam.test', 'ACC-CLEAN-01', NULL, 'ses_98c0d6b1', 'cart.item_added', '2026-09-28 18:29:30+02', '{"productId":"p010","sku":"ACC-CLEAN-01","qty":1,"price":24.9}', 77),
+    ('cliente@ucam.test', NULL, NULL, 'ses_98c0d6b1', 'checkout.started', '2026-09-28 18:33:00+02', '{"items":2}', 78),
+    ('cliente@ucam.test', NULL, 'UC-2026-01009', 'ses_98c0d6b1', 'order.created', '2026-09-28 18:35:00+02', '{"orderId":"UC-2026-01009","total":303.9,"lines":2}', 79),
+    ('cliente@ucam.test', NULL, 'UC-2026-01009', 'ses_98c0d6b1', 'payment.simulated', '2026-09-28 18:35:01+02', '{"orderId":"UC-2026-01009","paymentId":"PAY-98C0D6","result":"approved"}', 80),
+    (NULL, '99-CLASSICS', NULL, 'ses_9abbe382', 'product.viewed', '2026-09-29 08:40:00+02', '{"productId":"p006","sku":"99-CLASSICS","category":"auriculares"}', 81),
+    ('marcos.ruiz@example.com', NULL, NULL, 'ses_ac0bb34f', 'support.requested', '2026-09-29 16:20:00+02', '{"ticketId":"INC-B5T6RV","orderId":null,"subject":"Duda de compatibilidad con mi amplificador"}', 82),
+    ('marcos.ruiz@example.com', 'HD-599', NULL, 'ses_5a60c7eb', 'product.viewed', '2026-09-29 20:10:00+02', '{"productId":"p007","sku":"HD-599","category":"auriculares"}', 83),
+    ('marcos.ruiz@example.com', 'HD-599', NULL, 'ses_5a60c7eb', 'cart.item_added', '2026-09-29 20:10:30+02', '{"productId":"p007","sku":"HD-599","qty":1,"price":129}', 84),
+    ('marcos.ruiz@example.com', 'VIN-DSOTM-50', NULL, 'ses_5a60c7eb', 'product.viewed', '2026-09-29 20:11:00+02', '{"productId":"p008","sku":"VIN-DSOTM-50","category":"vinilos"}', 85),
+    ('marcos.ruiz@example.com', 'VIN-DSOTM-50', NULL, 'ses_5a60c7eb', 'cart.item_added', '2026-09-29 20:11:30+02', '{"productId":"p008","sku":"VIN-DSOTM-50","qty":1,"price":44.99}', 86)
+) AS v(email, sku, numero, sesion, tipo, fecha, datos, n)
+LEFT JOIN cliente  c  ON c.email          = v.email
+LEFT JOIN producto p  ON p.sku            = v.sku
+LEFT JOIN pedido   pe ON pe.numero_pedido = v.numero
+ORDER BY v.n;
+
+COMMIT;
