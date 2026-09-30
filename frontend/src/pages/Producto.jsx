@@ -12,9 +12,10 @@ import { eur } from '../lib/format.js'
 function Producto() {
   const { slug } = useParams()
   const product = getProductBySlug(slug)
-  const { addItem } = useCart()
+  const { addItem, getAvailableStock, openCart } = useCart()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
+  const [selectedVariantId, setSelectedVariantId] = useState(null)
 
   useEffect(() => {
     if (product) trackEvent('product.viewed', { productId: product.id, sku: product.sku, category: product.category })
@@ -33,9 +34,17 @@ function Producto() {
 
   const cat = CATEGORIES.find((c) => c.slug === product.category)
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
+  const selectedVariant = product.variants?.find((variant) => variant.id === selectedVariantId) ?? null
+  const stock = getAvailableStock(product.id, selectedVariantId)
+  const variantType = product.finish ? 'Acabado' : product.color ? 'Color' : null
+  const variantValue = selectedVariant?.finish ?? selectedVariant?.color ?? product.finish ?? product.color
+  const variantOptions = [
+    { id: null, value: product.finish ?? product.color, stock: product.stock },
+    ...(product.variants ?? []).map((variant) => ({ ...variant, value: variant.finish ?? variant.color })),
+  ].filter((option) => option.value)
 
   const add = () => {
-    addItem(product, qty)
+    if (!addItem(product, qty, selectedVariant)) return
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -61,21 +70,46 @@ function Producto() {
             <p className="pdp-price">{eur(product.price)} <small>IVA incluido</small></p>
             <p className="pdp-desc">{product.description}</p>
 
-            <p className={'stock ' + (product.stock <= 5 ? 'low' : '')}>
-              {product.stock === 0 ? 'Sin stock' : product.stock <= 5 ? `Últimas ${product.stock} unidades` : `${product.stock} unidades disponibles · envío en 24-48 h`}
+            {variantOptions.length > 0 && (
+              <fieldset className="variant-picker">
+                <legend>{variantType}: <strong>{variantValue}</strong></legend>
+                <div className="variant-options">
+                  {variantOptions.map((option) => {
+                    const optionStock = getAvailableStock(product.id, option.id)
+                    const selected = option.id === selectedVariantId
+                    return (
+                      <button
+                        key={option.id ?? 'original'}
+                        type="button"
+                        className={selected ? 'selected' : ''}
+                        aria-pressed={selected}
+                        disabled={optionStock === 0}
+                        onClick={() => { setSelectedVariantId(option.id); setQty(1); setAdded(false) }}
+                      >
+                        <span>{option.value}</span>
+                        <small>{optionStock}</small>
+                      </button>
+                    )
+                  })}
+                </div>
+              </fieldset>
+            )}
+
+            <p className={'stock-count ' + (stock <= 5 ? 'low' : '')}>
+              <span>Stock disponible</span><strong>{stock}</strong><small>Envío en 24-48 h</small>
             </p>
 
             <div className="pdp-buy">
               <div className="qty" role="group" aria-label="Cantidad">
                 <button disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Restar">−</button>
                 <span>{qty}</span>
-                <button disabled={qty >= product.stock} onClick={() => setQty((q) => Math.min(product.stock, q + 1))} aria-label="Sumar">+</button>
+                <button disabled={qty >= stock} onClick={() => setQty((q) => Math.min(stock, q + 1))} aria-label="Sumar">+</button>
               </div>
-              <button className="btn btn-accent btn-lg" onClick={add} disabled={product.stock === 0}>
+              <button className={`btn btn-lg ${added ? 'added' : 'btn-accent'}`} onClick={add} disabled={stock === 0}>
                 {added ? <><Check size={18} /> Añadido</> : 'Añadir al carrito'}
               </button>
             </div>
-            {added && <p className="added-note"><Link to="/carrito">Ver carrito</Link></p>}
+            {added && <p className="added-note"><button type="button" className="text-button" onClick={openCart}>Ver carrito</button></p>}
 
             <ul className="perks">
               <li><Truck size={18} /> Envío gratis en pedidos de más de 300 €</li>
@@ -90,7 +124,8 @@ function Producto() {
               {Object.entries(product.specs).map(([k, v]) => (
                 <tr key={k}><th scope="row">{k}</th><td>{v}</td></tr>
               ))}
-              <tr><th scope="row">Referencia</th><td>{product.sku}</td></tr>
+              {variantType && <tr><th scope="row">{variantType} seleccionado</th><td>{variantValue}</td></tr>}
+              <tr><th scope="row">Referencia</th><td>{selectedVariant?.sku ?? product.sku}</td></tr>
             </tbody>
           </table></details>
           <details><summary>Compatibilidad y conexiones</summary><p>{product.compatibility}</p><p>Comprueba las conexiones de tu equipo antes de elegir. <Link to="/soporte">Consultar compatibilidad</Link></p></details>

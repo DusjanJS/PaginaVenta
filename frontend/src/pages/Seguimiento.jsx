@@ -61,7 +61,7 @@ export default function Seguimiento() {
                 {order.lines.map((line) => (
                   <li key={line.cartKey ?? line.productId}>
                     <ImageSlot src={line.image} alt={line.name} className="tracking-product-image" fit="contain" />
-                    <div><strong>{line.name}</strong><span>{line.color ? `${line.color} · ` : ''}× {line.qty}</span></div>
+                    <div><strong>{line.name}</strong><span>{line.variantValue ?? line.finish ? `${line.variantValue ?? line.finish} · ` : ''}× {line.qty}</span></div>
                     <strong>{eur(line.unitPrice * line.qty)}</strong>
                   </li>
                 ))}

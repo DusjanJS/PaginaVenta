@@ -5,7 +5,7 @@ import { eur } from '../lib/format.js'
 
 export default function OrderSummary() {
   const { items } = useCart()
-  const { user } = useAuth()
+  const { user, openAccount } = useAuth()
   const t = computeTotals(items, { user })
   const missing = FREE_SHIPPING_FROM - (t.subtotal - t.discount)
 
@@ -19,7 +19,7 @@ export default function OrderSummary() {
         <div className="total"><dt>Total</dt><dd>{eur(t.total)}</dd></div>
         <div className="small"><dt>IVA incluido (21 %)</dt><dd>{eur(t.ivaIncluded)}</dd></div>
       </dl>
-      {!user && <p className="hint">Regístrate para disfrutar de un 10 % de descuento durante tu primer mes.</p>}
+      {!user && <div className="guest-discount"><strong>Consigue un 10 % de descuento</strong><p>Regístrate para disfrutarlo durante tu primer mes.</p><button type="button" onClick={() => openAccount('register')}>Crear cuenta</button><small>Puedes finalizar la compra sin registrarte.</small></div>}
       {t.shipping > 0 && missing > 0 && <p className="hint">Te faltan {eur(missing)} para envío gratis.</p>}
     </div>
   )

@@ -1,6 +1,6 @@
 // INSTRUMENTACIÓN DE EVENTOS
 // Cada evento se guarda con id, tipo, fecha, sesión, usuario y payload.
-// Ahora mismo se persiste en localStorage + consola estructurada.
+// Ahora mismo se persiste durante la pestaña actual + consola estructurada.
 // Cuando tengáis backend, sustituid la función `persist` por un POST a /api/events.
 
 const KEY = 'ucam_events'
@@ -26,7 +26,7 @@ function getSessionId() {
 
 function currentUserEmail() {
   try {
-    return JSON.parse(localStorage.getItem('ucam_user'))?.email ?? null
+    return JSON.parse(sessionStorage.getItem('ucam_user'))?.email ?? null
   } catch {
     return null
   }
@@ -34,7 +34,7 @@ function currentUserEmail() {
 
 export function getEvents() {
   try {
-    return JSON.parse(localStorage.getItem(KEY)) ?? []
+    return JSON.parse(sessionStorage.getItem(KEY)) ?? []
   } catch {
     return []
   }
@@ -43,7 +43,7 @@ export function getEvents() {
 function persist(event) {
   const all = getEvents()
   all.push(event)
-  localStorage.setItem(KEY, JSON.stringify(all))
+  sessionStorage.setItem(KEY, JSON.stringify(all))
 }
 
 export function trackEvent(type, payload = {}) {
@@ -61,7 +61,7 @@ export function trackEvent(type, payload = {}) {
 }
 
 export function clearEvents() {
-  localStorage.removeItem(KEY)
+  sessionStorage.removeItem(KEY)
 }
 
 export function downloadEvents(events, format = 'json') {

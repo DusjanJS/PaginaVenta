@@ -10,7 +10,7 @@ export default function CartNotice() {
       <CheckCircle2 size={22} aria-hidden="true" />
       <div>
         <strong>Producto añadido al carrito</strong>
-        <span>{notice.name}{notice.color ? ` - ${notice.color}` : ''}</span>
+        <span>{notice.name}{notice.variantValue ? ` - ${notice.variantValue}` : ''}</span>
       </div>
       <button type="button" className="cart-notice-link" onClick={openCart}>Ver carrito</button>
       <button type="button" onClick={dismissNotice} aria-label="Cerrar aviso"><X size={18} /></button>

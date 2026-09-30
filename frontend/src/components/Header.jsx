@@ -3,6 +3,9 @@ import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Disc3, Search, User, ShoppingBag, X, Menu } from 'lucide-react'
 import { useCart } from '../context/CartContext.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
+import AccountModal from './AccountModal.jsx'
+import CartPopover from './CartPopover.jsx'
+import PrototypeBanner from './PrototypeBanner.jsx'
 
 const LINKS = [
   { to: '/', label: 'Inicio', end: true },
@@ -14,8 +17,8 @@ const LINKS = [
 ]
 
 export default function Header() {
-  const { count } = useCart()
-  const { user, openAccount } = useAuth()
+  const { count, cartOpen, toggleCart, closeCart } = useCart()
+  const { user, authView, openAccount, closeAccount } = useAuth()
   const [menu, setMenu] = useState(false)
   const navigate = useNavigate()
   const [searching, setSearching] = useState(false)
@@ -28,7 +31,14 @@ export default function Header() {
   }
 
   return (
-    <header className="header">
+    <header className={`header ${cartOpen || authView ? 'overlay-open' : ''}`}>
+      <PrototypeBanner />
+      {!user && (
+        <div className="header-promo">
+          <span>Regístrate y disfruta de un <strong>10 % de descuento</strong> durante tu primer mes</span>
+          <button type="button" onClick={() => openAccount('register')}>Registrarse</button>
+        </div>
+      )}
       <div className="header-inner">
         <Link to="/" className="logo" aria-label="UCAM Stereo, inicio">
           <span className="logo-mark"><Disc3 size={20} /></span>
@@ -52,11 +62,19 @@ export default function Header() {
           ) : (
             <button className="icon-btn" onClick={() => setSearching(true)} aria-label="Buscar"><Search size={20} /></button>
           )}
-          <button onClick={() => openAccount()} className="icon-btn" aria-label={user ? `Cuenta de ${user.name}` : 'Iniciar sesión'}><User size={20} />{user && <span className="session-dot" />}</button>
-          <Link to="/carrito" className="icon-btn" aria-label={`Carrito, ${count} artículos`}>
-            <ShoppingBag size={20} />
-            {count > 0 && <span className="cart-badge">{count}</span>}
-          </Link>
+          <div className="account-anchor">
+            <button onClick={() => { closeCart(); if (authView) closeAccount(); else openAccount() }} className="icon-btn" aria-label={user ? `Mi usuario: ${user.name}` : 'Mi usuario'} aria-expanded={!!authView}>
+              <User size={20} />{user && <span className="session-dot" />}
+            </button>
+            {authView && <AccountModal />}
+          </div>
+          <div className="cart-anchor">
+            <button type="button" onClick={() => { if (authView) closeAccount(); toggleCart() }} className="icon-btn" aria-label={`Carrito, ${count} ${count === 1 ? 'artículo' : 'artículos'}`} aria-expanded={cartOpen}>
+              <ShoppingBag size={20} />
+              {count > 0 && <span className="cart-badge">{count}</span>}
+            </button>
+            {cartOpen && <CartPopover />}
+          </div>
         </div>
       </div>
     </header>

@@ -57,12 +57,6 @@ export default function Footer() {
             </li>
 
             <li>
-              <Link to="/soporte">
-                Información de envíos
-              </Link>
-            </li>
-
-            <li>
               <Link to="/info/devoluciones">
                 Devoluciones
               </Link>
@@ -81,12 +75,6 @@ export default function Footer() {
             </li>
 
 
-
-            <li>
-              <Link to="/login">
-                Mi cuenta
-              </Link>
-            </li>
 
             <li>
               <Link to="/admin">

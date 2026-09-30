@@ -1,12 +1,14 @@
-# UCAM Stereo: frontend actualizado
+# UCAM Stereo: frontend
 
 ## Puesta en marcha
 
-## Desde esta carpeta `frontend`:
+En caso de no estar en la carpeta "frontend", seguir estos pasos:
+- cd "PaginaVenta"
+- cd "frontend"
 
-npm ci
+Desde esta carpeta `frontend`:
 
-npm run dev (para lanzar un modelo de prueba)
+npm ci (solo la primera vez para instalar las dependencias del proyecto)
+npm run dev / npm run build
 
-
-npm run build (para lanzar el modelo final)
+La diferencia entre "npm run dev" y "npm run build" es que "dev" se utiliza para actualizar una versión de prueba mientras que cuando queremos ejecutar una versión final para publicar, usamos "build"

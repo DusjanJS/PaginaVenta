@@ -11,7 +11,7 @@ export default function CheckoutOrderCard({ items, totals, title = 'Tu pedido', 
             <ImageSlot className="checkout-order-image" src={item.image} alt={item.name} fit="contain" />
             <div className="checkout-order-copy">
               <strong title={item.name}>{item.name}</strong>
-              <span>{item.color ? `${item.color} · ` : ''}× {item.qty}</span>
+              <span>{item.variantValue ? `${item.variantValue} · ` : ''}× {item.qty}</span>
             </div>
             <strong className="checkout-order-price">{eur((item.price ?? item.unitPrice) * item.qty)}</strong>
           </li>

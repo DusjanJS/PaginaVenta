@@ -37,7 +37,7 @@ export default function CartPopover() {
                   <ImageSlot src={item.image} alt={item.name} className="cart-popover-image" fit="contain" />
                   <div className="cart-popover-info">
                     <Link to={`/producto/${item.slug}`} onClick={closeCart}>{item.name}</Link>
-                    <span>{item.color ?? item.brand}</span>
+                    <span>{item.variantValue ?? item.brand}</span>
                     <div className="cart-popover-qty">
                       <button type="button" onClick={() => setQty(item.cartKey, item.qty - 1)} disabled={item.qty <= 1} aria-label={`Restar ${item.name}`}><Minus size={13} /></button>
                       <span>{item.qty}</span>

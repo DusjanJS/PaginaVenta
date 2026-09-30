@@ -3,7 +3,6 @@ import { ChevronRight, Music2, BadgeCheck, MonitorSpeaker, PackageCheck } from '
 import ImageSlot from '../components/ImageSlot.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import { CATEGORIES, PRODUCTS } from '../data/products.js'
-import { useAuth } from '../context/AuthContext.jsx'
 
 const WHY = [
   { icon: Music2, title: 'Sonido analógico', text: 'Seleccionamos cada producto por su calidad de sonido, no por su precio de venta.' },
@@ -13,7 +12,6 @@ const WHY = [
 ]
 
 export default function Home() {
-  const { user, openAccount } = useAuth()
   const featured = PRODUCTS.filter((p) => p.featured).slice(0, 4)
 
   return (
@@ -36,16 +34,6 @@ export default function Home() {
 
         </div>
       </section>
-
-      {/* BANNER DE DESCUENTO */}
-      {!user && (
-        <div className="promo">
-          <div className="promo-inner">
-            <span>Regístrate y disfruta de un <strong>10% de descuento</strong> durante tu primer mes</span>
-            <button onClick={() => openAccount("register")} className="btn btn-white btn-sm">Registrarse</button>
-          </div>
-        </div>
-      )}
 
       {/* CATEGORÍAS */}
       <section className="section section-light">
@@ -118,6 +106,21 @@ export default function Home() {
           <ImageSlot className="exp-img" src="https://images.unsplash.com/photo-1471478331149-c72f17e33c73?w=800&h=600&fit=crop&auto=format" alt="Guitarra y vinilo" />
         </div>
       </section>
+            {/* CTA FINAL */}
+      <section className="home-cta">
+        <div className="container home-cta-content">
+          <h2>Empieza a escuchar de otra manera.</h2>
+
+          <p>
+            Más de 8 productos de audio seleccionados para que encuentres exactamente lo que necesitas.
+          </p>
+
+          <Link to="/catalogo" className="home-cta-button">
+            Ver catálogo completo
+          </Link>
+        </div>
+      </section>
+      
     </>
   )
 }
