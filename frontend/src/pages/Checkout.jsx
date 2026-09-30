@@ -1,205 +1,55 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronLeft, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import CheckoutOrderCard from '../components/CheckoutOrderCard.jsx'
-import CheckoutStepper, { CheckoutLogo } from '../components/CheckoutStepper.jsx'
-import ImageSlot from '../components/ImageSlot.jsx'
-import { useAuth } from '../context/AuthContext.jsx'
+import OrderSummary from '../components/OrderSummary.jsx'
+import Modal from '../components/Modal.jsx'
 import { useCart } from '../context/CartContext.jsx'
-import { trackEvent } from '../lib/events.js'
-import { eur } from '../lib/format.js'
-import { createOrder, registerPayment } from '../lib/orders.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import { computeTotals } from '../lib/pricing.js'
-
-const EMPTY_FORM = {
-  nombre: '', apellidos: '', email: '', telefono: '', direccion: '', ciudad: '', provincia: '', cp: '', pais: 'España', newsletter: false,
+import { trackEvent } from '../lib/events.js'
+import { createOrder, registerPayment } from '../lib/orders.js'
+import { eur } from '../lib/format.js'
+const EMPTY = { nombre:'', apellidos:'', telefono:'', direccion:'', piso:'', ciudad:'', provincia:'', cp:'', pais:'España', notas:'' }
+function validate(f) {
+ const e = {}
+ for (const name of ['nombre','apellidos','ciudad','provincia']) if (f[name].trim().length < 2) e[name] = 'Completa este campo.'
+ if (!/^(?:\+34)?[6-9]\d{8}$/.test(f.telefono.replace(/\s/g,''))) e.telefono='Introduce un teléfono español válido.'
+ if (f.direccion.trim().length < 5) e.direccion='Indica calle y número.'
+ if (!/^\d{5}$/.test(f.cp)) e.cp='Introduce 5 dígitos.'
+ return e
 }
-
-function validate(form) {
-  const errors = {}
-  for (const name of ['nombre', 'apellidos', 'ciudad', 'provincia']) {
-    if (form[name].trim().length < 2) errors[name] = 'Completa este campo.'
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Introduce un correo válido.'
-  if (!/^(?:\+34)?[6-9]\d{8}$/.test(form.telefono.replace(/\s/g, ''))) errors.telefono = 'Introduce un teléfono español válido.'
-  if (form.direccion.trim().length < 5) errors.direccion = 'Indica calle y número.'
-  if (!/^\d{5}$/.test(form.cp)) errors.cp = 'Introduce 5 dígitos.'
-  return errors
-}
-
 export default function Checkout() {
-  const { items, completePurchase } = useCart()
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, email: user?.email ?? '' }))
-  const [errors, setErrors] = useState({})
-  const [step, setStep] = useState(1)
-  const [paying, setPaying] = useState(false)
-  const [payError, setPayError] = useState('')
-  const started = useRef(false)
-  const paymentLock = useRef(false)
-  const totals = computeTotals(items, { user })
-
-  useEffect(() => {
-    if (items.length && !started.current) {
-      started.current = true
-      trackEvent('checkout.started', { items: items.length })
-    }
-  }, [items])
-
-  const change = (event) => {
-    const { name, value, checked, type } = event.target
-    setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
-    if (errors[name]) setErrors((current) => ({ ...current, [name]: undefined }))
-  }
-
-  const moveTo = (nextStep) => {
-    setStep(nextStep)
-    setPayError('')
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const submitDelivery = (event) => {
-    event.preventDefault()
-    const nextErrors = validate(form)
-    setErrors(nextErrors)
-    const firstError = Object.keys(nextErrors)[0]
-    if (firstError) {
-      document.getElementById(firstError)?.focus()
-      return
-    }
-    moveTo(2)
-  }
-
-  const pay = async () => {
-    if (paymentLock.current) return
-    paymentLock.current = true
-    setPaying(true)
-    setPayError('')
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 850))
-      const order = createOrder({
-        customer: {
-          ...form,
-          nombre: `${form.nombre} ${form.apellidos}`.trim(),
-          guest: !user,
-          direccionCompleta: `${form.direccion}, ${form.cp} ${form.ciudad}, ${form.provincia}, ${form.pais}`,
-        },
-        items,
-        totals,
-      })
-      registerPayment(order.id, { method: 'paypal_simulado', result: 'approved' })
-      completePurchase()
-      navigate(`/pedido/${order.id}`)
-    } catch {
-      setPayError('No se pudo completar la simulación. Tu carrito sigue disponible para intentarlo de nuevo.')
-    } finally {
-      paymentLock.current = false
-      setPaying(false)
-    }
-  }
-
-  if (!items.length) {
-    return (
-      <section className="commerce-page checkout-empty-page">
-        <CheckoutLogo />
-        <div className="commerce-empty"><h1>Tu carrito está vacío</h1><Link to="/catalogo" className="commerce-primary-button">Explorar catálogo</Link></div>
-      </section>
-    )
-  }
-
-  return (
-    <section className="commerce-page checkout-screen">
-      <div className="checkout-container">
-        <CheckoutLogo />
-        <CheckoutStepper active={step} />
-
-        <div key={step} className="checkout-stage">
-          {step === 1 && (
-            <div className="checkout-two-columns">
-              <form className="checkout-delivery" onSubmit={submitDelivery} noValidate>
-                <h1>Datos de envío</h1>
-                <div className="checkout-form-grid">
-                  {[
-                    ['nombre', 'Nombre', 'given-name'], ['apellidos', 'Apellidos', 'family-name'],
-                    ['email', 'Email', 'email'], ['telefono', 'Teléfono', 'tel'],
-                    ['direccion', 'Dirección', 'address-line1'], ['ciudad', 'Ciudad', 'address-level2'],
-                    ['provincia', 'Provincia', 'address-level1'], ['cp', 'Código postal', 'postal-code'],
-                    ['pais', 'País', 'country-name'],
-                  ].map(([name, label, autoComplete]) => (
-                    <div className={`checkout-field ${name === 'direccion' || name === 'pais' ? 'wide' : ''}`} key={name}>
-                      <label htmlFor={name}>{label}</label>
-                      <input id={name} name={name} type={name === 'email' ? 'email' : 'text'} value={form[name]} onChange={change} autoComplete={autoComplete} readOnly={name === 'pais' || (name === 'email' && Boolean(user))} inputMode={name === 'cp' ? 'numeric' : name === 'telefono' ? 'tel' : undefined} aria-invalid={Boolean(errors[name])} />
-                      {errors[name] && <span className="checkout-error">{errors[name]}</span>}
-                    </div>
-                  ))}
-                </div>
-                <label className="checkout-newsletter"><input type="checkbox" name="newsletter" checked={form.newsletter} onChange={change} />Quiero recibir novedades de UCAM Stereo.</label>
-                <button className="commerce-primary-button" type="submit">Continuar</button>
-                <Link className="checkout-bottom-back" to="/carrito"><ChevronLeft size={16} />Volver al carrito</Link>
-              </form>
-              <CheckoutOrderCard items={items} totals={totals} compact />
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="checkout-two-columns review-columns">
-              <div className="checkout-review">
-                <h1>Resumen del pedido</h1>
-                <section className="checkout-review-panel address-panel">
-                  <div><h2>Datos de envío</h2><button type="button" onClick={() => moveTo(1)}>Editar</button></div>
-                  <p>{form.nombre} {form.apellidos}</p>
-                  <p>{form.direccion}</p>
-                  <p>{form.cp} {form.ciudad}, {form.provincia}</p>
-                  <p>{form.pais}</p>
-                  <p>{form.email} · {form.telefono}</p>
-                </section>
-                <section className="checkout-review-panel product-panel">
-                  <h2>Productos</h2>
-                  <ul>
-                    {items.map((item) => (
-                      <li key={item.cartKey}>
-                        <ImageSlot src={item.image} alt={item.name} className="checkout-review-image" fit="contain" />
-                        <div><strong>{item.name}</strong><span>{item.brand}{item.color ? ` · ${item.color}` : ''} · Cant: {item.qty}</span></div>
-                        <strong>{eur(item.price * item.qty)}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                  <dl className="checkout-review-totals">
-                    <div><dt>Subtotal</dt><dd>{eur(totals.subtotal)}</dd></div>
-                    {totals.discount > 0 && <div><dt>Descuento</dt><dd>-{eur(totals.discount)}</dd></div>}
-                    <div><dt>Envío</dt><dd>{totals.shipping ? eur(totals.shipping) : 'Gratis'}</dd></div>
-                    <div className="total"><dt>Total</dt><dd>{eur(totals.total)}</dd></div>
-                  </dl>
-                </section>
-                <div className="checkout-review-actions">
-                  <button className="commerce-secondary-button" type="button" onClick={() => moveTo(1)}>Atrás</button>
-                  <button className="commerce-primary-button" type="button" onClick={() => moveTo(3)}>Continuar al pago</button>
-                </div>
-              </div>
-              <CheckoutOrderCard items={items} totals={totals} compact />
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="checkout-two-columns payment-columns">
-              <div className="checkout-payment">
-                <h1>Pago seguro</h1>
-                <section className="paypal-panel">
-                  <div className="paypal-panel-title"><span className="paypal-icon">P</span><div><strong>Pago seguro con PayPal</strong><small>Protegido por PayPal Buyer Protection</small></div></div>
-                  <div className="paypal-total"><div><strong>Total a pagar</strong><span>IVA incluido · Cargo único</span></div><strong>{eur(totals.total)}</strong></div>
-                  {payError && <p className="checkout-payment-error" role="alert">{payError}</p>}
-                  <button className="paypal-button" type="button" onClick={pay} disabled={paying}><strong>P</strong>{paying ? 'Procesando pago…' : 'Continuar con PayPal'}</button>
-                  <p className="paypal-protection"><LockKeyhole size={15} />Tus datos están protegidos. Nunca almacenamos información de pago.</p>
-                </section>
-                <button className="checkout-bottom-back" type="button" onClick={() => moveTo(2)}><ChevronLeft size={16} />Volver al resumen</button>
-                <p className="checkout-simulation-note"><ShieldCheck size={15} />Pago académico simulado. No se realiza ningún cargo real.</p>
-              </div>
-              <CheckoutOrderCard items={items} totals={totals} compact />
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
-  )
+ const { items, clear } = useCart(), { user, openAccount } = useAuth(), navigate = useNavigate()
+ const [form,setForm]=useState(EMPTY), [errors,setErrors]=useState({}), [step,setStep]=useState('delivery'), [paypal,setPaypal]=useState(false), [paying,setPaying]=useState(false), [payError,setPayError]=useState('')
+ const started=useRef(false), lock=useRef(false), orderRef=useRef(null)
+ useEffect(()=>{ if(items.length && !started.current){started.current=true; trackEvent('checkout.started',{items:items.length})} },[items])
+ const totals=computeTotals(items,{user})
+ if (!items.length) return <section className="section"><div className="container empty"><h1 className="h-lg">Tu carrito está vacío</h1><Link to="/catalogo" className="btn btn-dark">Explorar catálogo</Link></div></section>
+ if (!user) return <section className="section"><div className="container narrow panel"><h1 className="h-lg">Identifícate para continuar</h1><p>Guarda tu pedido en tu cuenta y consulta su estado cuando quieras.</p><button className="btn btn-accent" onClick={()=>openAccount()}>Iniciar sesión</button><button className="btn btn-outline" onClick={()=>openAccount('register')}>Registrarse</button><Link to="/carrito">Volver al carrito</Link></div></section>
+ const review=e=>{ e.preventDefault();const next=validate(form);setErrors(next); if(Object.keys(next).length){document.getElementById(Object.keys(next)[0])?.focus(); return} setStep('review'); setPayError('') }
+ const pay=async result=>{
+   if(lock.current) return
+   lock.current=true;setPaying(true);setPayError('')
+   try {
+     await new Promise(resolve=>setTimeout(resolve,650))
+     const signature=JSON.stringify({items,totals,form,email:user.email})
+     if(!orderRef.current || orderRef.current.signature!==signature) {
+       const order=createOrder({customer:{...form,nombre:`${form.nombre} ${form.apellidos}`,email:user.email,direccion:`${form.direccion}${form.piso?', '+form.piso:''}, ${form.cp} ${form.ciudad}, ${form.provincia}, ${form.pais}`},items,totals})
+       orderRef.current={id:order.id,signature}
+     }
+     registerPayment(orderRef.current.id,{method:'paypal_simulado',result})
+     if(result==='approved'){clear();navigate(`/pedido/${orderRef.current.id}`)}
+     else {setPaypal(false);setPayError('PayPal ha rechazado el pago de prueba. No se ha cobrado nada. Puedes reintentarlo; el pedido conserva su referencia.')}
+   } catch {setPaypal(false);setPayError('No se pudo guardar el pedido. Comprueba el almacenamiento del navegador y vuelve a intentarlo.')}
+   finally{lock.current=false;setPaying(false)}
+ }
+ return <section className="section page-top"><div className="container">
+  <nav className="breadcrumb" aria-label="Ruta"><Link to="/carrito">Carrito</Link> / Finalizar pedido</nav><div className="section-head"><h1 className="h-xl">Finalizar pedido</h1><p className="session-state">Sesión iniciada como {user.email}</p></div>
+  <ol className="checkout-steps"><li className={step==='delivery'?'current':''}>1. Datos de entrega</li><li className={step==='review'?'current':''}>2. Revisar y pagar</li><li>3. Confirmación</li></ol>
+  <div className="cart-layout"><div>
+  {step==='delivery' ? <form className="checkout-form" onSubmit={review} noValidate><fieldset><legend>Datos de entrega</legend><div className="form-grid">
+    {[['nombre','Nombre','given-name'],['apellidos','Apellidos','family-name'],['telefono','Teléfono','tel'],['pais','País','country-name'],['direccion','Calle y número','address-line1'],['piso','Piso, puerta (opcional)','address-line2'],['cp','Código postal','postal-code'],['ciudad','Ciudad','address-level2'],['provincia','Provincia','address-level1']].map(([name,label,autocomplete])=><div className={'field '+(name==='direccion'?'span-2':'')} key={name}><label htmlFor={name}>{label}</label><input id={name} name={name} autoComplete={autocomplete} value={form[name]} readOnly={name==='pais'} required={name!=='piso'} inputMode={name==='cp'?'numeric':name==='telefono'?'tel':undefined} onChange={e=>setForm({...form,[name]:e.target.value})} aria-invalid={!!errors[name]} aria-describedby={errors[name]?`${name}-error`:undefined}/>{errors[name]&&<span className="field-error" id={`${name}-error`}>{errors[name]}</span>}</div>)}
+    <div className="field span-2"><label htmlFor="notas">Indicaciones de entrega (opcional)</label><textarea id="notas" rows={2} maxLength={500} value={form.notas} onChange={e=>setForm({...form,notas:e.target.value})}/></div></div><p className="hint">Envío de prueba dentro de España. Usa datos ficticios.</p></fieldset><button className="btn btn-accent">Revisar pedido</button></form> : <div className="checkout-form"><section className="panel"><h2 className="h-md">Revisa tu pedido</h2><div className="review-address"><h3>Entrega</h3><p>{form.nombre} {form.apellidos}</p><p>{form.direccion} {form.piso}</p><p>{form.cp} {form.ciudad}, {form.provincia}, {form.pais}</p><p>{form.telefono}</p><p>{user.email}</p>{form.notas && <p>{form.notas}</p>}<button className="text-button" onClick={()=>setStep('delivery')}>Editar datos de entrega</button></div><ul className="review-lines">{items.map(i=><li key={i.id}><span>{i.qty} × {i.brand} {i.name}</span><strong>{eur(i.qty*i.price)}</strong></li>)}</ul></section><section className="panel"><h2 className="h-md">Método de pago</h2><div className="paypal-choice"><strong className="paypal-word">Pay<span>Pal</span></strong><span>Pago simulado</span></div><p className="muted">Demostración sin conexión a PayPal ni cobros reales. No se solicitan datos bancarios.</p>{payError&&<p role="alert" className="alert">{payError}</p>}<button className="btn btn-paypal" onClick={()=>setPaypal(true)}>Continuar con PayPal</button></section></div>}
+  </div><aside><OrderSummary/><p className="hint">Podrás consultar el pedido desde Mi cuenta.</p></aside></div>
+  {paypal && <Modal title="Pago de prueba con PayPal" onClose={()=>{if(!paying){setPaypal(false);setPayError('Pago cancelado. Tu carrito sigue disponible.')}}}><div className="account-body"><p className="paypal-word">Pay<span>Pal</span></p><p>Total a confirmar: <strong>{eur(totals.total)}</strong></p><p className="muted">Esta ventana simula el resultado del pago. No inicia sesión en PayPal ni realiza ningún cargo.</p><button className="btn btn-paypal" disabled={paying} onClick={()=>pay('approved')}>{paying?'Procesando…':'Confirmar pago de prueba'}</button><button className="text-button" disabled={paying} onClick={()=>pay('declined')}>Simular pago rechazado</button><button className="btn btn-outline" disabled={paying} onClick={()=>{setPaypal(false);setPayError('Pago cancelado. Tu carrito sigue disponible.')}}>Cancelar pago</button></div></Modal>}
+ </div></section>
 }

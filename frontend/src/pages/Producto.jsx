@@ -12,10 +12,9 @@ import { eur } from '../lib/format.js'
 function Producto() {
   const { slug } = useParams()
   const product = getProductBySlug(slug)
-  const { addItem, getAvailableStock, openCart } = useCart()
+  const { addItem } = useCart()
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
-  const [selectedVariantId, setSelectedVariantId] = useState(null)
 
   useEffect(() => {
     if (product) trackEvent('product.viewed', { productId: product.id, sku: product.sku, category: product.category })
@@ -34,15 +33,9 @@ function Producto() {
 
   const cat = CATEGORIES.find((c) => c.slug === product.category)
   const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
-  const selectedVariant = product.variants?.find((variant) => variant.id === selectedVariantId) ?? null
-  const stock = getAvailableStock(product.id, selectedVariantId)
-  const colorOptions = [
-    { id: null, color: product.color, colorHex: product.colorHex, stock: product.stock },
-    ...(product.variants ?? []),
-  ].filter((option) => option.color)
 
   const add = () => {
-    if (!addItem(product, qty, selectedVariant)) return
+    addItem(product, qty)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
   }
@@ -68,47 +61,21 @@ function Producto() {
             <p className="pdp-price">{eur(product.price)} <small>IVA incluido</small></p>
             <p className="pdp-desc">{product.description}</p>
 
-            {colorOptions.length > 0 && (
-              <fieldset className="variant-picker">
-                <legend>Color: <strong>{selectedVariant?.color ?? product.color}</strong></legend>
-                <div className="variant-options">
-                  {colorOptions.map((option) => {
-                    const optionStock = getAvailableStock(product.id, option.id)
-                    const selected = option.id === selectedVariantId
-                    return (
-                      <button
-                        key={option.id ?? 'original'}
-                        type="button"
-                        className={selected ? 'selected' : ''}
-                        aria-pressed={selected}
-                        disabled={optionStock === 0}
-                        onClick={() => { setSelectedVariantId(option.id); setQty(1); setAdded(false) }}
-                      >
-                        <span className="color-swatch" style={{ backgroundColor: option.colorHex }} />
-                        <span>{option.color}</span>
-                        <small>{optionStock}</small>
-                      </button>
-                    )
-                  })}
-                </div>
-              </fieldset>
-            )}
-
-            <p className={'stock-count ' + (stock <= 5 ? 'low' : '')}>
-              <span>Stock disponible</span><strong>{stock}</strong><small>Envío en 24-48 h</small>
+            <p className={'stock ' + (product.stock <= 5 ? 'low' : '')}>
+              {product.stock === 0 ? 'Sin stock' : product.stock <= 5 ? `Últimas ${product.stock} unidades` : `${product.stock} unidades disponibles · envío en 24-48 h`}
             </p>
 
             <div className="pdp-buy">
               <div className="qty" role="group" aria-label="Cantidad">
                 <button disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))} aria-label="Restar">−</button>
                 <span>{qty}</span>
-                <button disabled={qty >= stock} onClick={() => setQty((q) => Math.min(stock, q + 1))} aria-label="Sumar">+</button>
+                <button disabled={qty >= product.stock} onClick={() => setQty((q) => Math.min(product.stock, q + 1))} aria-label="Sumar">+</button>
               </div>
-              <button className={`btn btn-lg ${added ? 'added' : 'btn-accent'}`} onClick={add} disabled={stock === 0}>
+              <button className="btn btn-accent btn-lg" onClick={add} disabled={product.stock === 0}>
                 {added ? <><Check size={18} /> Añadido</> : 'Añadir al carrito'}
               </button>
             </div>
-            {added && <p className="added-note"><button type="button" className="text-button" onClick={openCart}>Ver carrito</button></p>}
+            {added && <p className="added-note"><Link to="/carrito">Ver carrito</Link></p>}
 
             <ul className="perks">
               <li><Truck size={18} /> Envío gratis en pedidos de más de 300 €</li>

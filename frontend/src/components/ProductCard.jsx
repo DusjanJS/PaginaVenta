@@ -7,16 +7,12 @@ import { eur } from '../lib/format.js'
 import { CATEGORIES } from '../data/products.js'
 
 export default function ProductCard({ product }) {
-  const { addItem, getAvailableStock } = useCart()
+  const { addItem } = useCart()
   const cat = CATEGORIES.find((c) => c.slug === product.category)
   const [added, setAdded] = useState(false)
-  const stock = getAvailableStock(product.id)
-  const badge = product.badge?.startsWith('Últimas')
-    ? (stock > 0 ? `Últimas ${stock}` : 'Agotado')
-    : product.badge
 
   const handleAddToCart = () => {
-    if (!addItem(product, 1)) return
+    addItem(product, 1)
 
     setAdded(true)
 
@@ -33,15 +29,15 @@ export default function ProductCard({ product }) {
           alt={`${product.brand} ${product.name}`}
         />
 
-        {badge && (
+        {product.badge && (
           <span
             className={`badge ${
-              badge.startsWith('Últimas') || badge === 'Agotado'
+              product.badge.startsWith('Últimas')
                 ? 'badge-dark badge-right'
                 : ''
             }`}
           >
-            {badge}
+            {product.badge}
           </span>
         )}
       </Link>
@@ -64,17 +60,13 @@ export default function ProductCard({ product }) {
           {product.name}
         </Link>
 
-        <div className="card-availability">
-          <p className={`card-stock ${stock <= 5 ? 'low' : ''}`}><span>Stock</span><strong>{stock}</strong></p>
-          {product.variants?.length > 0 && <span className="color-count">{product.variants.length + 1} colores</span>}
-        </div>
-        <div className="card-bottom">
+        <p className="card-stock">{product.stock > 0 ? `${product.stock} unidades disponibles` : "Agotado"}</p><div className="card-bottom">
           <span className="price">{eur(product.price)}</span>
 
           <button
             className={`btn btn-sm ${added ? 'added' : 'btn-dark'}`}
             onClick={handleAddToCart}
-            disabled={stock === 0}
+            disabled={product.stock === 0}
           >
             {added ? '✓ Añadido' : '+ Carrito'}
           </button>

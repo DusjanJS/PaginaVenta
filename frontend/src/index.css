@@ -308,55 +308,6 @@ input[aria-invalid='true'], textarea[aria-invalid='true'] { border-color: #b3261
   .cat-card { height: 380px; }
   .order-meta div { grid-template-columns: 1fr; }
 }
-/* CTA FINAL DE LA PÁGINA DE INICIO */
-
-.home-cta {
-  width: 100%;
-  background: #c94f12;
-  padding: 70px 20px;
-  box-sizing: border-box;
-}
-
-.home-cta-content {
-  max-width: 900px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-.home-cta-content h2 {
-  margin: 0 0 16px;
-  color: #ffffff;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 42px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.home-cta-content p {
-  margin: 0 auto 36px;
-  max-width: 720px;
-  color: #ffffff;
-  font-size: 19px;
-  line-height: 1.5;
-}
-
-.home-cta-button {
-  display: inline-block;
-  padding: 18px 36px;
-  background: #ffffff;
-  color: #c94f12;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 18px;
-  font-weight: 700;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.home-cta-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-}
-
 /* =========================
    PÁGINAS DE INFORMACIÓN
    ========================= */

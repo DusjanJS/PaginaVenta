@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { getOrders, ORDER_STATUS } from '../lib/orders.js'
 import { eur, fechaHora } from '../lib/format.js'
 import { isWelcomeEligible } from '../lib/pricing.js'
+import Modal from './Modal.jsx'
 export default function AccountModal() {
   const { user, login, register, logout, authView, openAccount, closeAccount } = useAuth()
   const [error, setError] = useState(''), [busy, setBusy] = useState(false)
@@ -19,8 +19,7 @@ export default function AccountModal() {
     finally { setBusy(false) }
   }
   const orders = user ? getOrders().filter(o => o.customer.email === user.email) : []
-  return <section className="account-popover" role="dialog" aria-label={user ? 'Mi usuario' : 'Acceso de usuario'}>
-    <div className="account-popover-head"><strong>{user ? 'Mi usuario' : 'Acceso'}</strong><button type="button" onClick={closeAccount} aria-label="Cerrar"><X size={17} /></button></div>
+  return <Modal title={user ? 'Mi cuenta' : 'UCAM Stereo'} onClose={closeAccount}>
     {user ? <div className="account-body">
       <p className="session-state">Sesión iniciada</p><h3>Hola, {user.name}</h3><p className="muted">{user.email}</p>
       {isWelcomeEligible(user) && <p className="welcome-note">Tu 10 % de bienvenida está activo durante el primer mes.</p>}
@@ -41,5 +40,5 @@ export default function AccountModal() {
       <button type="button" className="text-button" onClick={() => {setError(''); openAccount(registering ? 'login' : 'register')}}>{registering ? 'Ya tengo cuenta. Iniciar sesión' : '¿No tienes cuenta? Regístrate'}</button>
       <details className="demo-note"><summary>Entorno de demostración</summary><p>Usa datos ficticios. Cuenta cliente: cliente@ucam.test / demo1234. Los registros y pedidos se guardan solo en este navegador.</p></details>
     </form>}
-  </section>
+  </Modal>
 }

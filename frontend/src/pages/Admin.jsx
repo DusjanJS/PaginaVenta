@@ -74,7 +74,7 @@ export default function Admin() {
                         <td>{fechaHora(o.createdAt)}</td>
                         <td>{o.customer.nombre}<br /><span className="muted">{o.customer.email}</span></td>
                         <td>{o.lines.length}</td>
-                        <td>{o.payment ? `${o.payment.result === 'approved' ? 'Aprobado' : 'Rechazado'} (${o.payment.method === 'paypal_simulado' ? 'PayPal' : 'Tarjeta de prueba'})` : '-'}</td>
+                        <td>{o.payment ? `${o.payment.result === 'approved' ? 'Aprobado' : 'Rechazado'} (${o.payment.method === 'paypal_simulado' ? 'PayPal' : 'Tarjeta de prueba'})` : '—'}</td>
                         <td className="r">{eur(o.totals.total)}</td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <select className={`status status-${o.status}`} value={o.status}
@@ -87,7 +87,7 @@ export default function Admin() {
                         <tr className="detail">
                           <td colSpan="7">
                             <ul>
-                              {o.lines.map((l) => <li key={l.cartKey ?? l.productId}>{l.qty} × {l.brand} {l.name}{l.color ? ` (${l.color})` : ''} - {eur(l.unitPrice * l.qty)}</li>)}
+                              {o.lines.map((l) => <li key={l.productId}>{l.qty} × {l.brand} {l.name} — {eur(l.unitPrice * l.qty)}</li>)}
                             </ul>
                             <p className="muted">Entrega: {o.customer.direccion}</p>
                           </td>
@@ -147,7 +147,7 @@ export default function Admin() {
                     <tr key={t.id}>
                       <td><strong>{t.id}</strong></td><td>{fechaHora(t.createdAt)}</td>
                       <td>{t.name}<br /><span className="muted">{t.email}</span></td>
-                      <td>{t.orderId ?? '-'}</td><td>{t.subject}</td><td>{t.message}</td>
+                      <td>{t.orderId ?? '—'}</td><td>{t.subject}</td><td>{t.message}</td>
                     </tr>
                   ))}
                 </tbody>

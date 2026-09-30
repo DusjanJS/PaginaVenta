@@ -3,7 +3,7 @@ export const TEST_USERS = [
   { email: 'cliente@ucam.test', password: 'demo1234', name: 'Cliente Demo', role: 'cliente' },
   { email: 'admin@ucam.test', password: 'admin1234', name: 'Admin Demo', role: 'admin' },
 ]
-const read = (key, fallback) => { try { return JSON.parse(sessionStorage.getItem(key)) ?? fallback } catch { return fallback } }
+const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback } catch { return fallback } }
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
 // Solo demostración local. Sustituir por autenticación del servidor al integrar el backend.
@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => read('ucam_user', null))
   const [authView, setAuthView] = useState(null)
   const openAccount = useCallback((view = 'login') => setAuthView(view), [])
-  const save = session => { sessionStorage.setItem('ucam_user', JSON.stringify(session)); setUser(session); return true }
+  const save = session => { localStorage.setItem('ucam_user', JSON.stringify(session)); setUser(session); return true }
   const login = async (email, password) => {
     if (user) return 'Cierra la sesión actual antes de entrar en otra cuenta.'
     email = email.trim().toLowerCase()
@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
     if (demo) {
       const dates = read('ucam_demo_dates', {})
       dates[email] ??= new Date().toISOString()
-      sessionStorage.setItem('ucam_demo_dates', JSON.stringify(dates))
+      localStorage.setItem('ucam_demo_dates', JSON.stringify(dates))
       return save({ email, name: demo.name, role: demo.role, joinedAt: dates[email] })
     }
     const found = read('ucam_accounts', []).find(u => u.email === email)
@@ -39,9 +39,9 @@ export function AuthProvider({ children }) {
     if ([...accounts, ...TEST_USERS].some(u => u.email === email)) return 'Ya existe una cuenta con este correo. Inicia sesión.'
     const salt = crypto.randomUUID(), joinedAt = new Date().toISOString()
     const hash = await digest(password, salt)
-    sessionStorage.setItem('ucam_accounts', JSON.stringify([...accounts, { name, email, salt, hash, joinedAt }]))
+    localStorage.setItem('ucam_accounts', JSON.stringify([...accounts, { name, email, salt, hash, joinedAt }]))
     return save({ name, email, role: 'cliente', joinedAt })
   }
-  const logout = () => { sessionStorage.removeItem('ucam_user'); setUser(null); setAuthView('login') }
+  const logout = () => { localStorage.removeItem('ucam_user'); setUser(null); setAuthView('login') }
   return <AuthContext.Provider value={{ user, login, register, logout, authView, openAccount, closeAccount: () => setAuthView(null) }}>{children}</AuthContext.Provider>
 }
