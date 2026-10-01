@@ -38,6 +38,7 @@ function Producto() {
   const stock = getAvailableStock(product.id, selectedVariantId)
   const variantType = product.finish ? 'Acabado' : product.color ? 'Color' : null
   const variantValue = selectedVariant?.finish ?? selectedVariant?.color ?? product.finish ?? product.color
+  const productImage = selectedVariant?.image ?? product.image
   const variantOptions = [
     { id: null, value: product.finish ?? product.color, stock: product.stock },
     ...(product.variants ?? []).map((variant) => ({ ...variant, value: variant.finish ?? variant.color })),
@@ -59,7 +60,7 @@ function Producto() {
         <div className="pdp">
           <div className="pdp-media">
             {/* 👉 Imagen principal: ruta definida en data/products.js */}
-            <ImageSlot className="pdp-img" src={product.image} alt={`${product.brand} ${product.name}`} fit="contain" />
+            <ImageSlot className="pdp-img" src={productImage} alt={`${product.brand} ${product.name} · ${variantValue}`} fit="contain" />
             {product.badge && <span className="badge">{product.badge}</span>}
           </div>
 
