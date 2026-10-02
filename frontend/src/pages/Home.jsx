@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronRight, Music2, BadgeCheck, MonitorSpeaker, PackageCheck } from 'lucide-react'
 import ImageSlot from '../components/ImageSlot.jsx'
 import ProductCard from '../components/ProductCard.jsx'
-import { CATEGORIES, PRODUCTS } from '../data/products.js'
+import { CATEGORIES } from '../data/products.js'
+import { obtenerProductos } from '../services/productos.js'
 
 const WHY = [
   { icon: Music2, title: 'Sonido analógico', text: 'Seleccionamos cada producto por su calidad de sonido, no por su precio de venta.' },
@@ -12,8 +14,22 @@ const WHY = [
 ]
 
 export default function Home() {
-  const featured = PRODUCTS.filter((p) => p.featured).slice(0, 4)
+const [productosBackend, setProductosBackend] = useState([])
 
+useEffect(() => {
+  obtenerProductos()
+    .then((productos) => {
+      setProductosBackend(productos)
+    })
+    .catch((error) => {
+      console.error('Error conectando con el backend:', error)
+    })
+}, [])
+
+ const featured = productosBackend
+  .filter((p) => p.featured)
+  .slice(0, 4)
+  
   return (
     <>
       {/* HERO */}
