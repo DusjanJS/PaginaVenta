@@ -2,6 +2,8 @@
 
 ## Canal digital de venta instrumentado
 
+1. Introducción:
+   
 UCAM Stereo es un proyecto académico desarrollado para la asignatura **Soluciones Informáticas para la Empresa (SIE)** del Grado en Ingeniería Informática de la UCAM.
 
 El proyecto consiste en el diseño e implementación de un **canal digital de venta** especializado en productos de audio, como tocadiscos, altavoces, auriculares y vinilos.
@@ -12,7 +14,7 @@ La aplicación representa el funcionamiento de una tienda online, incluyendo cat
 
 ---
 
-## Tecnologías utilizadas
+2. Tecnologías utilizadas
 
 ### Frontend
 
@@ -101,7 +103,7 @@ La información detallada sobre el uso de IA se encuentra documentada en `docs/`
 
 ---
 
-## Arquitectura
+3.  Arquitectura
 
 La aplicación está organizada separando la interfaz, el backend y la persistencia de datos.
 
@@ -148,3 +150,130 @@ La aplicación está organizada separando la interfaz, el backend y la persisten
                  | Pagos simulados      |
                  | Eventos              |
                  +----------------------+
+
+
+4. Eventos e instrumentación
+
+El proyecto incorpora instrumentación de eventos para registrar acciones relevantes durante la navegación y el proceso de compra.
+
+Entre los eventos contemplados se encuentran:
+
+product.viewed
+cart.item_added
+checkout.started
+order.created
+payment.simulated
+support.requested
+incident.created
+
+## Automatización con n8n
+
+n8n se utilizará para automatizar procesos relacionados con la compra.
+
+Una de las automatizaciones previstas consiste en enviar un correo electrónico de confirmación una vez completado el pedido.
+
+5.  Requisitos previos
+
+Para ejecutar el proyecto se necesitan:
+- Node.js
+- npm
+- PostgreSQL
+- Git
+- n8n
+
+##Node.js
+
+Node.js es necesario para ejecutar el frontend y el backend.
+
+Descarga oficial:
+
+https://nodejs.org/
+
+Se recomienda utilizar una versión LTS.
+
+Para comprobar la instalación:
+
+node --version
+npm --version
+
+##PostgreSQL
+
+PostgreSQL es necesario para ejecutar la base de datos.
+
+Descarga oficial:
+
+https://www.postgresql.org/download/
+
+Para comprobar la instalación:
+
+psql --version
+
+##Git
+
+Git es necesario para clonar y gestionar el repositorio.
+
+Descarga oficial:
+
+https://git-scm.com/downloads
+
+Para comprobar la instalación:
+
+git --version
+
+6. Instalación del proyecto
+
+##Clonar el repositorio
+
+Abrir una terminal y ejecutar:
+
+git clone https://github.com/DusjanJS/PaginaVenta.git
+
+Entrar en la carpeta:
+
+cd PaginaVenta
+
+##Instalación y ejecución del frontend
+
+Entrar en la carpeta del frontend:
+
+cd frontend
+
+Instalar las dependencias:
+
+npm install
+
+Ejecutar el servidor de desarrollo:
+
+npm run dev
+
+Vite mostrará la dirección local de acceso, normalmente:
+
+http://localhost:5173
+
+##Instalación y ejecución del backend
+
+Abrir otra terminal.
+
+Desde la carpeta raíz del proyecto:
+
+cd PaginaVenta/backend
+
+Instalar las dependencias:
+
+npm install
+
+Ejecutar el servidor:
+
+node src/server.js
+
+El backend se ejecutará normalmente en:
+
+http://localhost:3000
+
+Para comprobar que está funcionando se puede acceder a:
+
+http://localhost:3000
+
+Para comprobar la API de productos:
+
+http://localhost:3000/api/productos
