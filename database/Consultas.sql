@@ -203,7 +203,8 @@ ORDER BY pe.numero_pedido, lp.id_lineapedido;
 
 -- E4. Pedidos con su pago
 SELECT pe.numero_pedido, pe.estado AS estado_pedido,
-       pg.metodo, pg.importe, pg.resultado, pg.referencia_pago, pg.fecha_creacion AS fecha_pago
+       pg.metodo, pg.importe, pg.resultado, pg.referencia_pago,
+       pg.paypal_order_id, pg.paypal_capture_id, pg.fecha_creacion AS fecha_pago
 FROM pedido pe
 LEFT JOIN pago pg USING (id_pedido)
 ORDER BY pe.numero_pedido;
@@ -314,7 +315,7 @@ ORDER BY pe.numero_pedido;
 SELECT pe.numero_pedido, pe.estado, pe.total, pg.importe
 FROM pedido pe
 LEFT JOIN pago pg ON pg.id_pedido = pe.id_pedido AND pg.resultado = 'approved'
-WHERE pe.estado IN ('pagado_simulado', 'pendiente_preparacion', 'enviado', 'entregado')
+WHERE pe.estado IN ('pagado', 'pendiente_preparacion', 'enviado', 'entregado')
   AND (pg.id_pago IS NULL OR pg.importe <> pe.total);
 
 -- G3. Descuento aplicado solo a clientes con rol 'cliente' registrados y dentro de su mes
@@ -335,7 +336,7 @@ HAVING count(*) FILTER (WHERE v.es_base) <> 1;
 
 -- G5. Si un pedido tiene cambios de estado registrados, el actual coincide con el último.
 --     (Solo se revisan pedidos con algún evento order.status_changed: registerPayment
---     fija 'pagado_simulado' o 'con_incidencia' sin generar ese evento.)
+-- fija 'pagado' o 'con_incidencia' sin generar ese evento.)
 SELECT pe.numero_pedido, pe.estado AS estado_actual, u.hasta AS ultimo_cambio_registrado
 FROM pedido pe
 JOIN LATERAL (

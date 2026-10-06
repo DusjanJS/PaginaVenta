@@ -1,11 +1,20 @@
-const API_URL = "http://localhost:3000/api";
+const API_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
-export async function obtenerProductos() {
-    const respuesta = await fetch(`${API_URL}/productos`);
+let productosRequest = null;
 
-    if (!respuesta.ok) {
-        throw new Error("No se pudieron obtener los productos");
+export function obtenerProductos() {
+    if (!productosRequest) {
+        productosRequest = fetch(`${API_URL}/productos`)
+            .then((respuesta) => {
+                if (!respuesta.ok) {
+                    throw new Error("No se pudieron obtener los productos");
+                }
+                return respuesta.json();
+            })
+            .finally(() => {
+                productosRequest = null;
+            });
     }
 
-    return await respuesta.json();
+    return productosRequest;
 }

@@ -5,7 +5,7 @@ import ImageSlot from '../components/ImageSlot.jsx'
 import Stars from '../components/Stars.jsx'
 import ProductCard from '../components/ProductCard.jsx'
 import { CATEGORIES } from '../data/products.js'
-import { obtenerProductos } from '../services/productos.js'
+import { useProducts } from '../context/ProductsContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { trackEvent } from '../lib/events.js'
 import { eur } from '../lib/format.js'
@@ -13,42 +13,14 @@ import { eur } from '../lib/format.js'
 function Producto() {
   const { slug } = useParams()
 
-  const [product, setProduct] = useState(null)
-  const [productosBackend, setProductosBackend] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { products: productosBackend } = useProducts()
+  const product = productosBackend.find((p) => p.slug === slug) ?? null
 
   const { addItem, getAvailableStock, openCart } = useCart()
 
   const [qty, setQty] = useState(1)
   const [added, setAdded] = useState(false)
   const [selectedVariantId, setSelectedVariantId] = useState(null)
-
-  // Obtener productos desde el backend
-  useEffect(() => {
-    setLoading(true)
-
-    obtenerProductos()
-      .then((productos) => {
-        setProductosBackend(productos)
-
-        const productoEncontrado = productos.find(
-          (p) => p.slug === slug
-        )
-
-        setProduct(productoEncontrado ?? null)
-      })
-      .catch((error) => {
-        console.error(
-          'Error conectando con el backend:',
-          error
-        )
-
-        setProduct(null)
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [slug])
 
   // Registrar evento de visualización del producto
   useEffect(() => {
@@ -61,26 +33,6 @@ function Producto() {
     }
   }, [product])
 
-  // Mientras se obtiene el producto
-  if (loading) {
-    return (
-      <section className="section section-cream page-top">
-        <div className="container empty">
-          <h2>Cargando producto...</h2>
-        </div>
-      </section>
-    )
-  }
-
-<<<<<<< HEAD
-  const cat = CATEGORIES.find((c) => c.slug === product.category)
-  const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
-  const selectedVariant = product.variants?.find((variant) => variant.id === selectedVariantId) ?? null
-  const stock = getAvailableStock(product.id, selectedVariantId)
-  const variantType = product.finish ? 'Acabado' : product.color ? 'Color' : null
-  const variantValue = selectedVariant?.finish ?? selectedVariant?.color ?? product.finish ?? product.color
-  const productImage = selectedVariant?.image ?? product.image
-=======
   // Producto no encontrado
   if (!product) {
     return (
@@ -134,7 +86,8 @@ function Producto() {
     product.finish ??
     product.color
 
->>>>>>> 34ccbd5 (Conectar frontend con backend de productos)
+  const productImage = selectedVariant?.image ?? product.image
+
   const variantOptions = [
     {
       id: null,
@@ -181,15 +134,10 @@ function Producto() {
         <div className="pdp">
 
           <div className="pdp-media">
-<<<<<<< HEAD
-            {/* 👉 Imagen principal: ruta definida en data/products.js */}
-            <ImageSlot className="pdp-img" src={productImage} alt={`${product.brand} ${product.name} · ${variantValue}`} fit="contain" />
-            {product.badge && <span className="badge">{product.badge}</span>}
-=======
 
             <ImageSlot
               className="pdp-img"
-              src={product.image}
+              src={productImage}
               alt={`${product.brand} ${product.name}`}
               fit="contain"
             />
@@ -200,7 +148,6 @@ function Producto() {
               </span>
             )}
 
->>>>>>> 34ccbd5 (Conectar frontend con backend de productos)
           </div>
 
           <div className="pdp-info">

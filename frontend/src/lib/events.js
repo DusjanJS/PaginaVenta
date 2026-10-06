@@ -1,9 +1,6 @@
-// INSTRUMENTACIÓN DE EVENTOS
-// Cada evento se guarda con id, tipo, fecha, sesión, usuario y payload.
-// Ahora mismo se persiste durante la pestaña actual + consola estructurada.
-// Cuando tengáis backend, sustituid la función `persist` por un POST a /api/events.
+import { getStoredToken } from '../services/auth.js'
 
-const KEY = 'ucam_events'
+const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
 export const EVENT_TYPES = [
   'product.viewed',
@@ -15,71 +12,79 @@ export const EVENT_TYPES = [
   'order.status_changed',
 ]
 
+const SESSION_KEY = 'ucam_session_id'
+
 function getSessionId() {
-  let id = sessionStorage.getItem('ucam_session')
-  if (!id) {
-    id = 'ses_' + Math.random().toString(36).slice(2, 10)
-    sessionStorage.setItem('ucam_session', id)
+  let sessionId = sessionStorage.getItem(SESSION_KEY)
+  if (!sessionId) {
+    sessionId = `ses_${crypto.randomUUID().replaceAll('-', '').slice(0, 8)}`
+    sessionStorage.setItem(SESSION_KEY, sessionId)
   }
-  return id
-}
-
-function currentUserEmail() {
-  try {
-    return JSON.parse(sessionStorage.getItem('ucam_user'))?.email ?? null
-  } catch {
-    return null
-  }
-}
-
-export function getEvents() {
-  try {
-    return JSON.parse(sessionStorage.getItem(KEY)) ?? []
-  } catch {
-    return []
-  }
-}
-
-function persist(event) {
-  const all = getEvents()
-  all.push(event)
-  sessionStorage.setItem(KEY, JSON.stringify(all))
+  return sessionId
 }
 
 export function trackEvent(type, payload = {}) {
-  const event = {
-    id: 'evt_' + Math.random().toString(36).slice(2, 10),
-    type,
-    timestamp: new Date().toISOString(),
-    sessionId: getSessionId(),
-    user: currentUserEmail(),
-    payload,
-  }
-  persist(event)
-  console.log('[event]', JSON.stringify(event))
-  return event
+  const token = getStoredToken()
+  const request = fetch(`${API_URL}/eventos`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ type, payload, sessionId: getSessionId() }),
+  }).then(async (response) => {
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.error || 'No se pudo registrar el evento.')
+    return result
+  })
+  request.catch((error) => console.error('No se pudo registrar el evento:', error))
+  return request
+}
+
+function requestEvents(path = '', options = {}) {
+  const token = getStoredToken()
+  return fetch(`${API_URL}/eventos${path}`, {
+    ...options,
+    headers: {
+      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  }).then(async (response) => {
+    if (response.status === 204) return null
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.error || 'No se pudieron cargar los eventos.')
+    return result
+  })
+}
+
+export function getEvents() {
+  return requestEvents()
 }
 
 export function clearEvents() {
-  sessionStorage.removeItem(KEY)
+  return requestEvents('', { method: 'DELETE' })
 }
 
 export function downloadEvents(events, format = 'json') {
-  let content, mime, ext
-  if (format === 'csv') {
-    const rows = ['id,type,timestamp,sessionId,user,payload']
-    events.forEach((e) =>
-      rows.push([e.id, e.type, e.timestamp, e.sessionId, e.user ?? '', JSON.stringify(e.payload).replaceAll('"', '""')]
-        .map((v) => `"${v}"`).join(','))
-    )
-    content = rows.join('\n'); mime = 'text/csv'; ext = 'csv'
-  } else {
-    content = JSON.stringify(events, null, 2); mime = 'application/json'; ext = 'json'
-  }
-  const url = URL.createObjectURL(new Blob([content], { type: mime }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `ucam-events.${ext}`
-  a.click()
+  const content = format === 'csv'
+    ? [
+        'id,type,timestamp,sessionId,user,payload',
+        ...events.map((event) => [
+          event.id,
+          event.type,
+          event.timestamp,
+          event.sessionId,
+          event.user,
+          JSON.stringify(event.payload),
+        ].map((value) => `"${String(value ?? '').replaceAll('"', '""')}"`).join(',')),
+      ].join('\n')
+    : JSON.stringify(events, null, 2)
+  const blob = new Blob([content], { type: format === 'csv' ? 'text/csv' : 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `ucam-events.${format}`
+  anchor.click()
   URL.revokeObjectURL(url)
 }

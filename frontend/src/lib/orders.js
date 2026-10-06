@@ -1,82 +1,78 @@
-// Persistencia temporal de pedidos, pagos e incidencias durante la pestaña actual.
-// Está aislado en este archivo para poder cambiarlo por llamadas a una API real.
+import { getStoredToken } from '../services/auth.js'
 import { trackEvent } from './events.js'
 
-const ORDERS = 'ucam_orders'
-const TICKETS = 'ucam_tickets'
-const COUNTER = 'ucam_order_counter'
+const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
 export const ORDER_STATUS = {
   creado: 'Creado',
-  pagado_simulado: 'Pagado (simulado)',
+  pagado: 'Pagado',
   pendiente_preparacion: 'Pendiente de preparación',
   enviado: 'Enviado',
+  entregado: 'Entregado',
   cancelado: 'Cancelado',
   con_incidencia: 'Con incidencia',
 }
 
-const read = (k) => { try { return JSON.parse(sessionStorage.getItem(k)) ?? [] } catch { return [] } }
-const write = (k, v) => sessionStorage.setItem(k, JSON.stringify(v))
-
-function nextOrderId() {
-  const n = (Number(sessionStorage.getItem(COUNTER)) || 1000) + 1
-  sessionStorage.setItem(COUNTER, String(n))
-  return `UC-${new Date().getFullYear()}-${String(n).padStart(5, '0')}`
+async function request(path, { method = 'GET', body } = {}) {
+  const token = getStoredToken()
+  const response = await fetch(`${API_URL}/pedidos${path}`, {
+    method,
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+    const error = new Error(data.error || 'No se pudo completar la operación del pedido.')
+    error.status = response.status
+    throw error
+  }
+  return response.status === 204 ? null : response.json()
 }
 
-export const getOrders = () => read(ORDERS).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-export const getOrder = (id) => read(ORDERS).find((o) => o.id === id)
+export const getOrders = () => request('')
+export const getOrder = (id, trackingToken = '') => {
+  const query = trackingToken ? `?tracking=${encodeURIComponent(trackingToken)}` : ''
+  return request(`/${encodeURIComponent(id)}${query}`)
+}
 
-export function createOrder({ customer, items, totals }) {
-  const order = {
-    id: nextOrderId(),
-    createdAt: new Date().toISOString(),
-    status: 'creado',
-    customer,
-    lines: items.map((i) => ({ productId: i.productId, cartKey: i.cartKey, variantId: i.variantId, variantType: i.variantType, variantValue: i.variantValue, name: i.name, brand: i.brand, image: i.image, slug: i.slug, unitPrice: i.price, qty: i.qty })),
-    totals,
-    payment: null,
-  }
-  write(ORDERS, [...read(ORDERS), order])
-  trackEvent('order.created', { orderId: order.id, total: totals.total, lines: order.lines.length })
+export async function createOrder({ customer, items }) {
+  const shipping = Object.fromEntries(
+    ['nombre', 'apellidos', 'email', 'telefono', 'direccion', 'ciudad', 'provincia', 'cp', 'pais']
+      .filter((field) => typeof customer[field] === 'string')
+      .map((field) => [field, customer[field]])
+  )
+  const order = await request('', {
+    method: 'POST',
+    body: {
+      items: items.map((item) => ({
+        productId: item.productId ?? item.id,
+        variantId: item.variantId ?? null,
+        qty: item.qty,
+      })),
+      shipping,
+    },
+  })
+  trackEvent('order.created', { orderId: order.id, total: order.totals.total, lines: order.lines.length })
   return order
 }
 
-function patch(id, changes) {
-  const all = read(ORDERS).map((o) => (o.id === id ? { ...o, ...changes } : o))
-  write(ORDERS, all)
-  return all.find((o) => o.id === id)
-}
-
-export function registerPayment(orderId, { method, last4, result }) {
-  const payment = {
-    id: 'PAY-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
-    method, last4, result, at: new Date().toISOString(),
-  }
-  const order = patch(orderId, { payment, status: result === 'approved' ? 'pagado_simulado' : 'con_incidencia' })
-  trackEvent('payment.simulated', { orderId, paymentId: payment.id, result })
+export async function registerPayment(orderId, { method, last4, result }) {
+  const order = await request(`/${encodeURIComponent(orderId)}/pago`, {
+    method: 'POST',
+    body: { method, last4, result },
+  })
+  trackEvent('payment.simulated', { orderId, paymentId: order.payment.id, result })
   return order
 }
 
-export function updateOrderStatus(id, status) {
-  const prev = getOrder(id)?.status
-  patch(id, { status })
-  trackEvent('order.status_changed', { orderId: id, from: prev, to: status })
-}
-
-export const getTickets = () => read(TICKETS).sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-
-export function createTicket({ name, email, orderId, subject, message }) {
-  const ticket = {
-    id: 'INC-' + Math.random().toString(36).slice(2, 8).toUpperCase(),
-    createdAt: new Date().toISOString(),
-    name, email, orderId: orderId || null, subject, message, status: 'abierta',
-  }
-  write(TICKETS, [...read(TICKETS), ticket])
-  trackEvent('support.requested', { ticketId: ticket.id, orderId: ticket.orderId, subject })
-  return ticket
-}
-
-export function clearAll() {
-  ;[ORDERS, TICKETS, COUNTER].forEach((k) => sessionStorage.removeItem(k))
+export async function updateOrderStatus(id, status) {
+  const order = await request(`/${encodeURIComponent(id)}/estado`, {
+    method: 'PATCH',
+    body: { status },
+  })
+  trackEvent('order.status_changed', { orderId: id, to: status })
+  return order
 }

@@ -1,16 +1,46 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { getOrders, getTickets, updateOrderStatus, ORDER_STATUS, clearAll } from '../lib/orders.js'
+import { getOrders, updateOrderStatus, ORDER_STATUS } from '../lib/orders.js'
+import { getTickets, clearTickets } from '../lib/support.js'
 import { getEvents, clearEvents, downloadEvents, EVENT_TYPES } from '../lib/events.js'
 import { eur, fechaHora } from '../lib/format.js'
 
 export default function Admin() {
   const { user } = useAuth()
   const [tab, setTab] = useState('pedidos')
-  const [, refresh] = useState(0)
+  const [adminData, setAdminData] = useState({ email: null, orders: [], tickets: [], events: [], error: '' })
+  const [loadingData, setLoadingData] = useState(false)
+  const [refreshData, setRefreshData] = useState(0)
+  const [statusError, setStatusError] = useState('')
   const [filter, setFilter] = useState('todos')
   const [open, setOpen] = useState(null)
+
+  useEffect(() => {
+    if (user?.role !== 'admin') return undefined
+    let cancelled = false
+    Promise.all([getOrders(), getTickets(), getEvents()])
+      .then(([orders, tickets, events]) => {
+        if (!cancelled) setAdminData({ email: user.email, orders, tickets, events, error: '' })
+      })
+      .catch((error) => {
+        if (!cancelled) setAdminData({ email: user.email, orders: [], tickets: [], events: [], error: error.message })
+      })
+      .finally(() => { if (!cancelled) setLoadingData(false) })
+    return () => { cancelled = true }
+  }, [user, refreshData])
+
+  const dataMatchesUser = adminData.email === user?.email
+  const orders = dataMatchesUser ? adminData.orders : []
+  const tickets = dataMatchesUser ? adminData.tickets : []
+  const events = dataMatchesUser ? adminData.events : []
+  const dataError = dataMatchesUser ? adminData.error : ''
+  const loadingOrders = user?.role === 'admin' && (loadingData || !dataMatchesUser)
+
+  const refreshAdminData = () => {
+    setLoadingData(true)
+    setRefreshData((n) => n + 1)
+  }
 
   if (user?.role !== 'admin') {
     return (
@@ -26,14 +56,28 @@ export default function Admin() {
     )
   }
 
-  const orders = getOrders()
-  const events = getEvents().slice().reverse()
-  const tickets = getTickets()
   const shown = filter === 'todos' ? events : events.filter((e) => e.type === filter)
 
-  const reset = () => {
-    if (window.confirm('¿Borrar pedidos, eventos e incidencias de este navegador?')) {
-      clearAll(); clearEvents(); refresh((n) => n + 1)
+  const reset = async () => {
+    if (!window.confirm('¿Borrar todos los eventos e incidencias del servidor?')) return
+    try {
+      await Promise.all([clearTickets(), clearEvents()])
+      refreshAdminData()
+    } catch (error) {
+      setAdminData((current) => ({ ...current, error: error.message }))
+    }
+  }
+
+  const changeOrderStatus = async (id, status) => {
+    setStatusError('')
+    try {
+      const updated = await updateOrderStatus(id, status)
+      setAdminData((current) => ({
+        ...current,
+        orders: current.orders.map((order) => order.id === id ? updated : order),
+      }))
+    } catch (error) {
+      setStatusError(error.message)
     }
   }
 
@@ -45,9 +89,13 @@ export default function Admin() {
             <p className="eyebrow">Back-office</p>
             <h1 className="h-xl">Panel de administración</h1>
           </div>
-          <button className="btn btn-outline btn-sm" onClick={reset}>Reiniciar datos de prueba</button>
+          <div className="chips">
+            <button className="btn btn-outline btn-sm" onClick={refreshAdminData}>Actualizar datos</button>
+            <button className="btn btn-outline btn-sm" onClick={reset}>Reiniciar eventos e incidencias</button>
+          </div>
         </div>
 
+        {dataError && <p className="alert" role="alert">{dataError}</p>}
         <div className="stats">
           <div><strong>{orders.length}</strong><span>Pedidos</span></div>
           <div><strong>{eur(orders.filter((o) => o.status !== 'cancelado').reduce((s, o) => s + o.totals.total, 0))}</strong><span>Facturación simulada</span></div>
@@ -61,7 +109,9 @@ export default function Admin() {
           ))}
         </div>
 
+        {tab === 'pedidos' && statusError && <p className="alert" role="alert">{statusError}</p>}
         {tab === 'pedidos' && (
+          loadingOrders ? <div className="empty"><h3>Cargando pedidos…</h3></div> :
           orders.length === 0 ? <div className="empty"><h3>Aún no hay pedidos</h3><p>Completa una compra para verla aquí.</p></div> : (
             <div className="table-wrap">
               <table className="table">
@@ -78,7 +128,7 @@ export default function Admin() {
                         <td className="r">{eur(o.totals.total)}</td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <select className={`status status-${o.status}`} value={o.status}
-                            onChange={(e) => { updateOrderStatus(o.id, e.target.value); refresh((n) => n + 1) }} aria-label={`Estado de ${o.id}`}>
+                            onChange={(e) => changeOrderStatus(o.id, e.target.value)} aria-label={`Estado de ${o.id}`}>
                             {Object.entries(ORDER_STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                           </select>
                         </td>

@@ -1,47 +1,84 @@
-import { createContext, useContext, useState, useCallback } from 'react'
-export const TEST_USERS = [
-  { email: 'cliente@ucam.test', password: 'demo1234', name: 'Cliente Demo', role: 'cliente' },
-  { email: 'admin@ucam.test', password: 'admin1234', name: 'Admin Demo', role: 'admin' },
-]
-const read = (key, fallback) => { try { return JSON.parse(sessionStorage.getItem(key)) ?? fallback } catch { return fallback } }
+import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import {
+  clearStoredToken,
+  getCurrentUser,
+  getStoredToken,
+  loginUser,
+  logoutUser,
+  registerUser,
+  storeToken,
+} from '../services/auth.js'
+
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
-// Solo demostración local. Sustituir por autenticación del servidor al integrar el backend.
-async function digest(password, salt) {
-  const bytes = new TextEncoder().encode(salt + password)
-  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), b => b.toString(16).padStart(2, '0')).join('')
-}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => read('ucam_user', null))
+  const [user, setUser] = useState(null)
   const [authView, setAuthView] = useState(null)
   const openAccount = useCallback((view = 'login') => setAuthView(view), [])
-  const save = session => { sessionStorage.setItem('ucam_user', JSON.stringify(session)); setUser(session); return true }
+
+  useEffect(() => {
+    const token = getStoredToken()
+    if (!token) return undefined
+
+    let cancelled = false
+    getCurrentUser(token)
+      .then(({ user: currentUser }) => {
+        if (!cancelled) setUser(currentUser)
+      })
+      .catch((error) => {
+        if (error.status === 401) clearStoredToken()
+        else console.error('No se pudo verificar la sesión:', error)
+      })
+
+    return () => { cancelled = true }
+  }, [])
+
+  const saveSession = ({ token, user: currentUser }) => {
+    storeToken(token)
+    setUser(currentUser)
+    setAuthView(null)
+    return true
+  }
+
   const login = async (email, password) => {
     if (user) return 'Cierra la sesión actual antes de entrar en otra cuenta.'
-    email = email.trim().toLowerCase()
-    const demo = TEST_USERS.find(u => u.email === email && u.password === password)
-    if (demo) {
-      const dates = read('ucam_demo_dates', {})
-      dates[email] ??= new Date().toISOString()
-      sessionStorage.setItem('ucam_demo_dates', JSON.stringify(dates))
-      return save({ email, name: demo.name, role: demo.role, joinedAt: dates[email] })
-    }
-    const found = read('ucam_accounts', []).find(u => u.email === email)
-    if (!found || await digest(password, found.salt) !== found.hash) return false
-    return save({ email, name: found.name, role: 'cliente', joinedAt: found.joinedAt })
+    const session = await loginUser({ email, password })
+    return saveSession(session)
   }
+
   const register = async ({ name, email, password, confirm }) => {
     if (user) return 'Ya tienes una sesión iniciada.'
-    email = email.trim().toLowerCase(); name = name.trim()
-    if (name.length < 3 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) return 'Revisa tus datos. La contraseña debe tener al menos 8 caracteres.'
     if (password !== confirm) return 'Las contraseñas no coinciden.'
-    const accounts = read('ucam_accounts', [])
-    if ([...accounts, ...TEST_USERS].some(u => u.email === email)) return 'Ya existe una cuenta con este correo. Inicia sesión.'
-    const salt = crypto.randomUUID(), joinedAt = new Date().toISOString()
-    const hash = await digest(password, salt)
-    sessionStorage.setItem('ucam_accounts', JSON.stringify([...accounts, { name, email, salt, hash, joinedAt }]))
-    return save({ name, email, role: 'cliente', joinedAt })
+    const session = await registerUser({ name, email, password })
+    return saveSession(session)
   }
-  const logout = () => { sessionStorage.removeItem('ucam_user'); setUser(null); setAuthView('login') }
-  return <AuthContext.Provider value={{ user, login, register, logout, authView, openAccount, closeAccount: () => setAuthView(null) }}>{children}</AuthContext.Provider>
+
+  const logout = async () => {
+    const token = getStoredToken()
+    clearStoredToken()
+    setUser(null)
+    setAuthView('login')
+    if (token) {
+      try {
+        await logoutUser(token)
+      } catch (error) {
+        console.error('No se pudo invalidar la sesión en el servidor:', error)
+      }
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      login,
+      register,
+      logout,
+      authView,
+      openAccount,
+      closeAccount: () => setAuthView(null),
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }

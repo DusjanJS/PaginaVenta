@@ -1,20 +1,25 @@
 import { Check } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import CheckoutStepper, { CheckoutLogo } from '../components/CheckoutStepper.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { eur } from '../lib/format.js'
-import { getOrder } from '../lib/orders.js'
+import { useOrder } from '../hooks/useOrder.js'
 
 const longDate = (iso) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 
 export default function Confirmacion() {
   const { id } = useParams()
+  const location = useLocation()
   const { user } = useAuth()
-  const order = getOrder(id)
+  const { order, loading, error: loadError } = useOrder(id, user)
   const canView = order && (order.customer.guest || (user && (order.customer.email === user.email || user.role === 'admin')))
 
+  if (loading) {
+    return <section className="commerce-page checkout-empty-page"><CheckoutLogo /><div className="commerce-empty"><h1>Cargando pedido…</h1></div></section>
+  }
+
   if (!canView) {
-    return <section className="commerce-page checkout-empty-page"><CheckoutLogo /><div className="commerce-empty"><h1>Pedido no encontrado</h1><Link to="/catalogo" className="commerce-primary-button">Volver a la tienda</Link></div></section>
+    return <section className="commerce-page checkout-empty-page"><CheckoutLogo /><div className="commerce-empty"><h1>{loadError || 'Pedido no encontrado'}</h1><Link to="/catalogo" className="commerce-primary-button">Volver a la tienda</Link></div></section>
   }
 
   return (
@@ -23,6 +28,7 @@ export default function Confirmacion() {
         <CheckoutLogo />
         <CheckoutStepper active={4} />
         <div className="confirmation-content">
+          {location.state?.stockRefreshWarning && <p className="alert" role="status">{location.state.stockRefreshWarning}</p>}
           <span className="confirmation-check"><Check size={34} strokeWidth={2.5} /></span>
           <p className="confirmation-eyebrow">¡Pedido confirmado!</p>
           <h1>Gracias por tu compra.</h1>

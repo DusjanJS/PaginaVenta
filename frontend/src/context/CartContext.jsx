@@ -1,20 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { PRODUCTS } from '../data/products.js'
+import { useProducts } from './ProductsContext.jsx'
 import { trackEvent } from '../lib/events.js'
 
 const CART_KEY = 'ucam_cart'
-const INVENTORY_KEY = 'ucam_inventory_v2'
 const CartContext = createContext(null)
 
 const inventoryKey = (productId, variantId = null) => variantId ? `${productId}:${variantId}` : productId
-
-const DEFAULT_INVENTORY = PRODUCTS.reduce((inventory, product) => {
-  inventory[inventoryKey(product.id)] = product.stock
-  product.variants?.forEach((variant) => {
-    inventory[inventoryKey(product.id, variant.id)] = variant.stock
-  })
-  return inventory
-}, {})
 
 function readJson(key, fallback) {
   try {
@@ -27,13 +18,7 @@ function readJson(key, fallback) {
 export const useCart = () => useContext(CartContext)
 
 export function CartProvider({ children }) {
-  const [inventory, setInventory] = useState(() => {
-    const saved = readJson(INVENTORY_KEY, {})
-    return Object.fromEntries(Object.entries(DEFAULT_INVENTORY).map(([key, stock]) => [
-      key,
-      Number.isInteger(saved[key]) && saved[key] >= 0 ? saved[key] : stock,
-    ]))
-  })
+  const { products, refreshProducts } = useProducts()
   const [items, setItems] = useState(() => {
     const saved = readJson(CART_KEY, [])
     if (!Array.isArray(saved)) return []
@@ -44,7 +29,7 @@ export function CartProvider({ children }) {
       delete itemWithoutLegacyVariant.finish
       const productId = item.productId ?? item.id
       const variantId = item.variantId ?? null
-      const product = PRODUCTS.find((candidate) => candidate.id === productId)
+      const product = products.find((candidate) => candidate.id === productId)
       const variant = product?.variants?.find((candidate) => candidate.id === variantId)
       const variantType = product?.finish ? 'Acabado' : product?.color ? 'Color' : item.variantType ?? null
       const variantValue = variant?.finish ?? variant?.color ?? product?.finish ?? product?.color ?? item.variantValue ?? item.finish ?? item.color ?? null
@@ -66,13 +51,13 @@ export function CartProvider({ children }) {
     sessionStorage.setItem(CART_KEY, JSON.stringify(items))
   }, [items])
 
-  useEffect(() => {
-    sessionStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory))
-  }, [inventory])
-
   useEffect(() => () => clearTimeout(noticeTimer.current), [])
 
-  const getAvailableStock = (productId, variantId = null) => inventory[inventoryKey(productId, variantId)] ?? 0
+  const getAvailableStock = (productId, variantId = null) => {
+    const product = products.find((candidate) => candidate.id === productId)
+    const variant = product?.variants?.find((candidate) => candidate.id === variantId)
+    return variantId ? (variant?.stock ?? 0) : (product?.stock ?? 0)
+  }
 
   const showNotice = (item) => {
     clearTimeout(noticeTimer.current)
@@ -129,17 +114,11 @@ export function CartProvider({ children }) {
 
   const removeItem = (cartKey) => setItems((previous) => previous.filter((item) => item.cartKey !== cartKey))
   const clear = () => setItems([])
-  const completePurchase = () => {
-    setInventory((previous) => {
-      const next = { ...previous }
-      items.forEach((item) => {
-        next[item.cartKey] = Math.max(0, (next[item.cartKey] ?? item.stock) - item.qty)
-      })
-      return next
-    })
+  const completePurchase = async () => {
     setItems([])
     setNotice(null)
     setCartOpen(false)
+    await refreshProducts()
   }
   const count = items.reduce((total, item) => total + item.qty, 0)
 

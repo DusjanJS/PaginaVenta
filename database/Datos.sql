@@ -245,7 +245,7 @@ VALUES
  'Cliente Demo', 'cliente@ucam.test', '600 000 001', 'Calle Mayor 12, 3ºA', 'Murcia', 'Murcia', '30001', 'España',
  393.99, 39.40, 0.00, 354.59, 21.00, 293.05, 61.54,
  '2026-09-26 19:05:00+02', '2026-09-27 09:15:00+02'),
-('UC-2026-01002', (SELECT id_cliente FROM cliente WHERE email = 'cliente@ucam.test'), 2, 'pagado_simulado',
+('UC-2026-01002', (SELECT id_cliente FROM cliente WHERE email = 'cliente@ucam.test'), 2, 'pagado',
  'Cliente Demo', 'cliente@ucam.test', '+34 600 000 001', 'Avenida Juan Carlos I 45', 'Lorca', 'Murcia', '30800', 'España',
  198.80, 19.88, 6.90, 185.82, 21.00, 153.57, 32.25,
  '2026-09-29 12:30:00+02', '2026-09-29 12:30:00+02'),
@@ -316,7 +316,7 @@ FROM (VALUES
     ('cliente@ucam.test', NULL,   NULL,            'ses_k3m9x2ab', 'checkout.started',     '2026-09-26 18:58:00+02', '{"items":2}'),
     ('cliente@ucam.test', NULL,   'UC-2026-01001', 'ses_k3m9x2ab', 'order.created',        '2026-09-26 19:05:00+02', '{"orderId":"UC-2026-01001","total":354.59,"lines":2}'),
     ('cliente@ucam.test', NULL,   'UC-2026-01001', 'ses_k3m9x2ab', 'payment.simulated',    '2026-09-26 19:05:00+02', '{"orderId":"UC-2026-01001","paymentId":"PAY-K3M9X2","result":"approved"}'),
-    ('admin@ucam.test',   NULL,   'UC-2026-01001', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-27 09:00:00+02', '{"orderId":"UC-2026-01001","from":"pagado_simulado","to":"pendiente_preparacion"}'),
+    ('admin@ucam.test',   NULL,   'UC-2026-01001', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-27 09:00:00+02', '{"orderId":"UC-2026-01001","from":"pagado","to":"pendiente_preparacion"}'),
     ('admin@ucam.test',   NULL,   'UC-2026-01001', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-27 09:15:00+02', '{"orderId":"UC-2026-01001","from":"pendiente_preparacion","to":"enviado"}'),
     -- Pedido UC-2026-01002 (cliente demo)
     ('cliente@ucam.test', 'p004', NULL,            'ses_h5j2k9lm', 'product.viewed',       '2026-09-29 12:05:00+02', '{"productId":"p004","sku":"R1280DB","category":"altavoces"}'),
@@ -335,7 +335,7 @@ FROM (VALUES
     (NULL,               NULL,   'UC-2026-01003', 'ses_b4n6v8cx', 'order.created',        '2026-09-28 20:10:00+02', '{"orderId":"UC-2026-01003","total":163.89,"lines":2}'),
     (NULL,               NULL,   'UC-2026-01003', 'ses_b4n6v8cx', 'payment.simulated',    '2026-09-28 20:10:00+02', '{"orderId":"UC-2026-01003","paymentId":"PAY-ZX81LP","result":"approved"}'),
     (NULL,               NULL,   'UC-2026-01003', 'ses_b4n6v8cx', 'support.requested',    '2026-09-29 09:50:00+02', '{"ticketId":"INC-A1B2C3","orderId":"UC-2026-01003","subject":"Mi pedido no aparece como enviado"}'),
-    ('admin@ucam.test',   NULL,   'UC-2026-01003', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-29 10:00:00+02', '{"orderId":"UC-2026-01003","from":"pagado_simulado","to":"con_incidencia"}'),
+    ('admin@ucam.test',   NULL,   'UC-2026-01003', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-29 10:00:00+02', '{"orderId":"UC-2026-01003","from":"pagado","to":"con_incidencia"}'),
     -- Carrito activo y consulta de soporte sin pedido (cliente demo)
     ('cliente@ucam.test', 'p005', NULL,            'ses_t1y2u3io', 'product.viewed',       '2026-09-30 08:38:00+02', '{"productId":"p005","sku":"R-41PM","category":"altavoces"}'),
     ('cliente@ucam.test', 'p005', NULL,            'ses_t1y2u3io', 'cart.item_added',      '2026-09-30 08:40:00+02', '{"productId":"p005","sku":"R-41PM","variantId":null,"variantType":"Acabado","variantValue":"Fresno negro","qty":1,"price":279}'),

@@ -1,9 +1,9 @@
 import { Check, ChevronLeft } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import ImageSlot from '../components/ImageSlot.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { eur } from '../lib/format.js'
-import { getOrder } from '../lib/orders.js'
+import { useOrder } from '../hooks/useOrder.js'
 
 const shortDate = (date) => new Intl.DateTimeFormat('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }).format(date).replace('.', '')
 const addDays = (iso, days) => {
@@ -14,12 +14,18 @@ const addDays = (iso, days) => {
 
 export default function Seguimiento() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const trackingToken = searchParams.get('tracking') || ''
   const { user } = useAuth()
-  const order = getOrder(id)
-  const canView = order && (order.customer.guest || (user && (order.customer.email === user.email || user.role === 'admin')))
+  const { order, loading, error: loadError } = useOrder(id, user, trackingToken)
+  const canView = order && (trackingToken || order.customer.guest || (user && (order.customer.email === user.email || user.role === 'admin')))
+
+  if (loading) {
+    return <section className="commerce-page"><div className="commerce-container commerce-empty"><h1>Cargando pedido…</h1></div></section>
+  }
 
   if (!canView) {
-    return <section className="commerce-page"><div className="commerce-container commerce-empty"><h1>Pedido no encontrado</h1><Link to="/" className="commerce-primary-button">Volver a la tienda</Link></div></section>
+    return <section className="commerce-page"><div className="commerce-container commerce-empty"><h1>{loadError || 'Pedido no encontrado'}</h1><Link to="/" className="commerce-primary-button">Volver a la tienda</Link></div></section>
   }
 
   const isSent = order.status === 'enviado'

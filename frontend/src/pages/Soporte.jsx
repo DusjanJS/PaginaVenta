@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createTicket } from '../lib/orders.js'
+import { createTicket } from '../lib/support.js'
 
 const EMPTY = { name: '', email: '', orderId: '', subject: '', message: '' }
 
@@ -7,10 +7,12 @@ export default function Soporte() {
   const [f, setF] = useState(EMPTY)
   const [errors, setErrors] = useState({})
   const [ticket, setTicket] = useState(null)
+  const [submitError, setSubmitError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   const change = (e) => setF((v) => ({ ...v, [e.target.name]: e.target.value }))
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     const errs = {}
     if (f.name.trim().length < 3) errs.name = 'Escribe tu nombre.'
@@ -20,8 +22,16 @@ export default function Soporte() {
     if (f.message.trim().length < 10) errs.message = 'Cuéntanos qué ha pasado (mín. 10 caracteres).'
     setErrors(errs)
     if (Object.keys(errs).length) return
-    setTicket(createTicket(f))
-    setF(EMPTY)
+    setSubmitError('')
+    setSubmitting(true)
+    try {
+      setTicket(await createTicket(f))
+      setF(EMPTY)
+    } catch (error) {
+      setSubmitError(error.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -38,6 +48,7 @@ export default function Soporte() {
             Solicitud registrada con el código <strong>{ticket.id}</strong>. Es una simulación: nadie responderá a este mensaje.
           </p>
         )}
+        {submitError && <p className="alert" role="alert">{submitError}</p>}
 
         <form className="panel" onSubmit={submit} noValidate>
           {[
@@ -57,7 +68,9 @@ export default function Soporte() {
             <textarea id="message" name="message" rows="5" value={f.message} onChange={change} aria-invalid={!!errors.message} />
             {errors.message && <span className="field-error">{errors.message}</span>}
           </div>
-          <button className="btn btn-accent">Enviar solicitud</button>
+          <button className="btn btn-accent" disabled={submitting}>
+            {submitting ? 'Enviando…' : 'Enviar solicitud'}
+          </button>
         </form>
       </div>
     </section>

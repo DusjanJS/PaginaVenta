@@ -13,10 +13,33 @@ const productos = [
     badge: "Más vendido",
     stock: 14,
     featured: true,
+    finish: "Negro mate",
+    variants: [
+        {
+            id: "aluminio-cepillado",
+            finish: "Aluminio cepillado",
+            stock: 7,
+            sku: "AT-LP120XUSB-S",
+            image: "/img/productos/at-lp120xusb-aluminio-cepillado.png"
+        }
+    ],
     image: "/img/referencia/foto-0.webp",
+        
     description:
-        "Tocadiscos de tracción directa con salida USB para digitalizar tu colección."
-
+        "Tocadiscos de tracción directa con salida USB para digitalizar tu colección.",
+    features: [
+        "Digitaliza tu colección a través de la salida USB.",
+        "Selecciona entre tres velocidades de reproducción.",
+        "Conecta por RCA gracias al preamplificador integrado."
+    ],
+    specs: {
+        "Tracción": "Directa",
+        "Velocidades": "33 1/3, 45 y 78 rpm",
+        "Preamplificador": "Phono/Line integrado",
+        "Conexión": "RCA + USB",
+        "Peso": "10,8 kg"
+    },
+    compatibility: "Compatible con amplificadores y altavoces activos con entrada RCA o línea."
     },
 
    {
@@ -43,10 +66,11 @@ const productos = [
             id: "aluminio-cepillado",
             finish: "Aluminio cepillado",
             stock: 11,
-            sku: "PS-LX310BT-S"
+            sku: "PS-LX310BT-S",
+            image: "/img/productos/ps-lx310bt-aluminio-cepillado.jpg"
         }
     ],
-    image: "/img/referencia/foto-7.avif",
+    image: "/img/productos/ps-lx310bt-aluminio-cepillado.jpg",
     description:
         "Tocadiscos automático de correa con Bluetooth para enviar el sonido a auriculares o altavoces inalámbricos.",
     specs: {
@@ -84,7 +108,8 @@ const productos = [
             id: "nogal-natural",
             finish: "Nogal natural",
             stock: 3,
-            sku: "DEBUT-CARBON-EVO-W"
+            sku: "DEBUT-CARBON-EVO-W",
+            image: "/img/productos/debut-carbon-evo-nogal-natural.jpg"
         }
     ],
     image: "/img/referencia/foto-1.jpg",
@@ -125,7 +150,8 @@ const productos = [
             id: "fresno-negro",
             finish: "Fresno negro",
             stock: 17,
-            sku: "R1280DB-BK"
+            sku: "R1280DB-BK",
+            image: "/img/productos/r1280db-fresno-negro.jpg"
         }
     ],
     image: "/img/referencia/foto-2.webp",
@@ -166,10 +192,11 @@ const productos = [
             id: "nogal-oscuro",
             finish: "Nogal oscuro",
             stock: 5,
-            sku: "R-41PM-W"
+            sku: "R-41PM-W",
+            image: "/img/productos/r-41pm-nogal-oscuro.jpg"
         }
     ],
-    image: "/img/productos/r-41pm.jpg",
+    image: "/img/productos/r-41pm-fresno-negro.jpg",
     description:
         'Altavoces amplificados con bocina Tractrix y woofer de cobre de 4". Entrada phono integrada para conectar el tocadiscos directamente.',
     specs: {
@@ -207,7 +234,8 @@ const productos = [
             id: "nogal-plata",
             color: "Nogal y plata",
             stock: 4,
-            sku: "99-CLASSICS-S"
+            sku: "99-CLASSICS-S",
+            image: "/img/productos/99-classics-nogal-plata.jpg"
         }
     ],
     image: "/img/referencia/foto-5.webp",
@@ -248,10 +276,11 @@ const productos = [
             id: "negro",
             color: "Negro",
             stock: 13,
-            sku: "HD-599-BK"
+            sku: "HD-599-BK",
+            image: "/img/productos/hd-599-negro.jpg"
         }
     ],
-    image: "/img/productos/hd-599.jpg",
+    image: "/img/productos/hd-599-marfil-marron.jpg",
     description:
         "Auriculares abiertos de referencia para escucha larga y cómoda. Sonido amplio y natural.",
     specs: {
@@ -289,10 +318,11 @@ const productos = [
             id: "transparente",
             color: "Transparente",
             stock: 6,
-            sku: "VIN-DSOTM-50-CL"
+            sku: "VIN-DSOTM-50-CL",
+            image: "/img/productos/dark-side-of-the-moon-transparente.jpg"
         }
     ],
-    image: "/img/productos/dsotm.jpg",
+    image: "/img/productos/dark-side-of-the-moon-negro.jpg",
     description:
         "Reedición en vinilo de 180 g del álbum de 1973 en vinilo de colores, con póster y pegatinas.",
     specs: {
@@ -330,10 +360,11 @@ const productos = [
             id: "azul-cobalto",
             color: "Azul cobalto",
             stock: 8,
-            sku: "VIN-KOB-180-BL"
+            sku: "VIN-KOB-180-BL",
+            image: "/img/productos/kind-of-blue-azul-cobalto.jpg"
         }
     ],
-    image: "/img/productos/kind-of-blue.jpg",
+    image: "/img/productos/kind-of-blue-negro.jpg",
     description:
         "Clásico del jazz modal en vinilo de 180 g con prensado de alta fidelidad.",
     specs: {
@@ -371,10 +402,11 @@ const productos = [
             id: "azul",
             color: "Azul",
             stock: 24,
-            sku: "ACC-CLEAN-01-BL"
+            sku: "ACC-CLEAN-01-BL",
+            image: "/img/productos/kit-limpieza-vinilos-azul.jpg"
         }
     ],
-    image: "/img/productos/kit-limpieza.jpg",
+    image: "/img/productos/kit-limpieza-vinilos-negro.jpg",
     description:
         "Cepillo de fibra de carbono, líquido limpiador de 250 ml y paño de microfibra.",
     specs: {

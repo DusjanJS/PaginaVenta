@@ -1,26 +1,15 @@
-import { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react'
+import { useMemo, useState, useRef, useLayoutEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Grid2X2, List } from 'lucide-react'
 import ProductCard from '../components/ProductCard.jsx'
 import { CATEGORIES } from '../data/products.js'
-import { obtenerProductos } from '../services/productos.js'
+import { useProducts } from '../context/ProductsContext.jsx'
 
 export default function Catalogo() {
   const { categoria } = useParams()
   const [params, setParams] = useSearchParams()
   const [view, setView] = useState('grid')
-  const [productosBackend, setProductosBackend] = useState([])
-
-  // Obtener productos desde el backend
-  useEffect(() => {
-    obtenerProductos()
-      .then((productos) => {
-        setProductosBackend(productos)
-      })
-      .catch((error) => {
-        console.error('Error conectando con el backend:', error)
-      })
-  }, [])
+  const { products: productosBackend } = useProducts()
 
   const pending = useRef(params)
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, LockKeyhole, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js'
 import CheckoutOrderCard from '../components/CheckoutOrderCard.jsx'
 import CheckoutStepper, { CheckoutLogo } from '../components/CheckoutStepper.jsx'
 import ImageSlot from '../components/ImageSlot.jsx'
@@ -8,8 +9,11 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { trackEvent } from '../lib/events.js'
 import { eur } from '../lib/format.js'
-import { createOrder, registerPayment } from '../lib/orders.js'
+import { createOrder as createStoreOrder } from '../lib/orders.js'
 import { computeTotals } from '../lib/pricing.js'
+import { getStoredToken } from '../services/auth.js'
+
+const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
 const EMPTY_FORM = {
   nombre: '', apellidos: '', email: '', telefono: '', direccion: '', ciudad: '', provincia: '', cp: '', pais: 'España', newsletter: false,
@@ -35,10 +39,29 @@ export default function Checkout() {
   const [errors, setErrors] = useState({})
   const [step, setStep] = useState(1)
   const [paying, setPaying] = useState(false)
+  const [hasCreatedOrder, setHasCreatedOrder] = useState(false)
   const [payError, setPayError] = useState('')
+  const [paypalConfig, setPaypalConfig] = useState(null)
+  const [paypalConfigError, setPaypalConfigError] = useState('')
   const started = useRef(false)
   const paymentLock = useRef(false)
+  const orderIdRef = useRef(null)
+  const paypalOrderIdRef = useRef(null)
+  const orderCreationRef = useRef(null)
   const totals = computeTotals(items, { user })
+
+  useEffect(() => {
+    let cancelled = false
+    fetch(`${API_URL}/pagos/paypal/config`)
+      .then(async (response) => {
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || 'No se pudo cargar la configuración de PayPal.')
+        return result
+      })
+      .then((config) => { if (!cancelled) setPaypalConfig(config) })
+      .catch((error) => { if (!cancelled) setPaypalConfigError(error.message) })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     if (items.length && !started.current) {
@@ -71,30 +94,98 @@ export default function Checkout() {
     moveTo(2)
   }
 
-  const pay = async () => {
+  const paypalRequest = async (path, body) => {
+    const token = getStoredToken()
+    const response = await fetch(`${API_URL}/pagos/paypal/${path}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+    })
+    const result = response.status === 204 ? null : await response.json()
+    if (!response.ok) throw new Error(result?.error || 'No se pudo completar el pago con PayPal.')
+    return result
+  }
+
+  const createPaypalOrder = async () => {
+    if (paypalOrderIdRef.current) return paypalOrderIdRef.current
+    if (orderCreationRef.current) return orderCreationRef.current
+    orderCreationRef.current = (async () => {
+      setPaying(true)
+      setPayError('')
+      try {
+        if (!orderIdRef.current) {
+          const order = await createStoreOrder({
+            customer: {
+              ...form,
+              nombre: `${form.nombre} ${form.apellidos}`.trim(),
+              direccionCompleta: `${form.direccion}, ${form.cp} ${form.ciudad}, ${form.provincia}, ${form.pais}`,
+            },
+            items,
+          })
+          orderIdRef.current = order.id
+          setHasCreatedOrder(true)
+        }
+        const paypalOrder = await paypalRequest('crear', { orderId: orderIdRef.current })
+        paypalOrderIdRef.current = paypalOrder.id
+        return paypalOrder.id
+      } catch (error) {
+        setPayError(`${error.message || 'No se pudo preparar el pago.'} El pedido puede reintentarse y el carrito sigue intacto.`)
+        throw error
+      } finally {
+        orderCreationRef.current = null
+        setPaying(false)
+      }
+    })()
+    return orderCreationRef.current
+  }
+
+  const capturePaypalOrder = async (data) => {
     if (paymentLock.current) return
     paymentLock.current = true
     setPaying(true)
     setPayError('')
     try {
-      await new Promise((resolve) => setTimeout(resolve, 850))
-      const order = createOrder({
-        customer: {
-          ...form,
-          nombre: `${form.nombre} ${form.apellidos}`.trim(),
-          guest: !user,
-          direccionCompleta: `${form.direccion}, ${form.cp} ${form.ciudad}, ${form.provincia}, ${form.pais}`,
-        },
-        items,
-        totals,
+      const order = await paypalRequest('capturar', {
+        orderId: orderIdRef.current,
+        paypalOrderId: data.orderID,
       })
-      registerPayment(order.id, { method: 'paypal_simulado', result: 'approved' })
-      completePurchase()
-      navigate(`/pedido/${order.id}`)
-    } catch {
-      setPayError('No se pudo completar la simulación. Tu carrito sigue disponible para intentarlo de nuevo.')
+      let stockRefreshWarning = ''
+      try {
+        await completePurchase()
+      } catch (refreshError) {
+        console.error('Pedido pagado, pero no se pudo actualizar el catálogo:', refreshError)
+        stockRefreshWarning = 'El pedido está confirmado, pero no se pudo actualizar el stock. Recarga la página para consultar las existencias actuales.'
+      }
+      const receiptWarning = order.receipt?.sent === false
+        ? 'El pago está confirmado, pero el recibo de prueba no pudo enviarse. Se ha registrado el error en el servidor.'
+        : ''
+      navigate(`/pedido/${order.id}`, { state: { stockRefreshWarning, receiptWarning } })
+    } catch (error) {
+      setPayError(`${error.message || 'No se pudo completar el pago.'} El pedido sigue pendiente y tu carrito permanece intacto.`)
     } finally {
       paymentLock.current = false
+      setPaying(false)
+    }
+  }
+
+  const cancelPaypalOrder = async (data) => {
+    setPaying(true)
+    setPayError('')
+    try {
+      if (orderIdRef.current && data.orderID) {
+        await paypalRequest('cancelar', {
+          orderId: orderIdRef.current,
+          paypalOrderId: data.orderID,
+        })
+      }
+      paypalOrderIdRef.current = null
+      setPayError('Has cancelado el pago. No se ha realizado ningún cargo y puedes intentarlo de nuevo; el carrito sigue intacto.')
+    } catch (error) {
+      setPayError(`${error.message} El carrito sigue intacto.`)
+    } finally {
       setPaying(false)
     }
   }
@@ -147,7 +238,7 @@ export default function Checkout() {
               <div className="checkout-review">
                 <h1>Resumen del pedido</h1>
                 <section className="checkout-review-panel address-panel">
-                  <div><h2>Datos de envío</h2><button type="button" onClick={() => moveTo(1)}>Editar</button></div>
+                  <div><h2>Datos de envío</h2><button type="button" onClick={() => moveTo(1)} disabled={hasCreatedOrder}>Editar</button></div>
                   <p>{form.nombre} {form.apellidos}</p>
                   <p>{form.direccion}</p>
                   <p>{form.cp} {form.ciudad}, {form.provincia}</p>
@@ -173,7 +264,7 @@ export default function Checkout() {
                   </dl>
                 </section>
                 <div className="checkout-review-actions">
-                  <button className="commerce-secondary-button" type="button" onClick={() => moveTo(1)}>Atrás</button>
+                  <button className="commerce-secondary-button" type="button" onClick={() => moveTo(1)} disabled={hasCreatedOrder}>Atrás</button>
                   <button className="commerce-primary-button" type="button" onClick={() => moveTo(3)}>Continuar al pago</button>
                 </div>
               </div>
@@ -189,11 +280,31 @@ export default function Checkout() {
                   <div className="paypal-panel-title"><span className="paypal-icon">P</span><div><strong>Pago seguro con PayPal</strong><small>Protegido por PayPal Buyer Protection</small></div></div>
                   <div className="paypal-total"><div><strong>Total a pagar</strong><span>IVA incluido · Cargo único</span></div><strong>{eur(totals.total)}</strong></div>
                   {payError && <p className="checkout-payment-error" role="alert">{payError}</p>}
-                  <button className="paypal-button" type="button" onClick={pay} disabled={paying}><strong>P</strong>{paying ? 'Procesando pago…' : 'Continuar con PayPal'}</button>
+                  {paypalConfigError && <p className="checkout-payment-error" role="alert">{paypalConfigError}</p>}
+                  {!paypalConfig && !paypalConfigError && <p role="status">Conectando con PayPal Sandbox…</p>}
+                  {paypalConfig && (
+                    <PayPalScriptProvider options={{
+                      clientId: paypalConfig.clientId,
+                      currency: 'EUR',
+                      intent: 'capture',
+                    }}>
+                      <PayPalButtons
+                        style={{ layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' }}
+                        disabled={paying}
+                        createOrder={createPaypalOrder}
+                        onApprove={capturePaypalOrder}
+                        onCancel={cancelPaypalOrder}
+                        onError={(error) => {
+                          console.error('PayPal Sandbox error:', error)
+                          setPayError('PayPal no ha podido completar la operación. No se ha confirmado el pedido y tu carrito sigue intacto.')
+                        }}
+                      />
+                    </PayPalScriptProvider>
+                  )}
                   <p className="paypal-protection"><LockKeyhole size={15} />Tus datos están protegidos. Nunca almacenamos información de pago.</p>
                 </section>
-                <button className="checkout-bottom-back" type="button" onClick={() => moveTo(2)}><ChevronLeft size={16} />Volver al resumen</button>
-                <p className="checkout-simulation-note"><ShieldCheck size={15} />Pago académico simulado. No se realiza ningún cargo real.</p>
+                <button className="checkout-bottom-back" type="button" onClick={() => moveTo(2)} disabled={hasCreatedOrder}><ChevronLeft size={16} />Volver al resumen</button>
+                <p className="checkout-simulation-note"><ShieldCheck size={15} />Pago de prueba en PayPal Sandbox. No se realizan cargos reales.</p>
               </div>
               <CheckoutOrderCard items={items} totals={totals} compact />
             </div>
