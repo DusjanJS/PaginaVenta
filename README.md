@@ -361,7 +361,7 @@ DB_PASSWORD=contraseña
 
 Los valores mostrados son únicamente un ejemplo y deben sustituirse por los correspondientes al entorno de ejecución.
 
-### 🔒 Información que no debe subirse al repositorio
+###  Información que no debe subirse al repositorio
 
 No se deben subir:
 
