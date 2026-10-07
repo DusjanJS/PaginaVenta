@@ -1,4 +1,4 @@
-# 🎵 UCAM Stereo
+#  UCAM Stereo
 
 ### Canal digital de venta instrumentado
 
@@ -27,13 +27,13 @@ La aplicación representa el funcionamiento de una tienda online, incluyendo:
 - Registro de eventos.
 - Automatización de procesos.
 
-> **⚠️ Importante:** UCAM Stereo es un prototipo exclusivamente académico. No se realizan pagos reales ni se utilizan datos personales, bancarios o credenciales personales reales.
+> ** Importante:** UCAM Stereo es un prototipo exclusivamente académico. No se realizan pagos reales ni se utilizan datos personales, bancarios o credenciales personales reales.
 
 ---
 
 ## 2. Tecnologías utilizadas
 
-### 🖥️ Frontend
+###  Frontend
 
 El frontend se ha desarrollado utilizando:
 
@@ -59,7 +59,7 @@ El frontend incluye, entre otras, las siguientes vistas:
 - Soporte.
 - Administración.
 
-### ⚙️ Backend
+### Backend
 
 El backend se ha desarrollado utilizando:
 
@@ -72,7 +72,7 @@ El backend se ha desarrollado utilizando:
 
 El backend actúa como intermediario entre el frontend y la base de datos y proporciona la API necesaria para consultar y gestionar la información de la aplicación.
 
-### 🗄️ Base de datos
+###  Base de datos
 
 La persistencia de datos se realiza mediante:
 
@@ -87,7 +87,7 @@ La base de datos almacena la información necesaria para representar el funciona
 - Pagos simulados.
 - Eventos.
 
-### 🎨 Diseño y prototipado
+###  Diseño y prototipado
 
 Para el diseño inicial, mockups y definición visual de la aplicación se ha utilizado:
 
@@ -106,7 +106,7 @@ Figma se utilizó para definir:
 
 Las decisiones de diseño realizadas por el grupo se encuentran documentadas en la carpeta [`docs/`](docs/).
 
-### 💳 Pago simulado
+###  Pago simulado
 
 Para representar el proceso de pago se utiliza:
 
@@ -114,7 +114,7 @@ Para representar el proceso de pago se utiliza:
 
 El pago se realiza exclusivamente como una simulación académica y no implica ninguna transacción económica real.
 
-### 🤖 Automatización
+###  Automatización
 
 Para las automatizaciones del sistema se utilizará:
 
@@ -122,7 +122,7 @@ Para las automatizaciones del sistema se utilizará:
 
 Una de las principales automatizaciones previstas consiste en el envío de un correo electrónico de confirmación después de completar una compra.
 
-### 🧠 Inteligencia Artificial
+###  Inteligencia Artificial
 
 Durante el desarrollo se han utilizado las siguientes herramientas de IA generativa:
 
