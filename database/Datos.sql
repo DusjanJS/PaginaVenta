@@ -1,18 +1,5 @@
--- =====================================================================
 --  UCAM STEREO — PARTE 2: DATOS (INSERT)                    v5
---  PostgreSQL 15+ / Supabase — Soluciones Informáticas para la Empresa
---
---  BLOQUE 1 — datos maestros copiados tal cual de PaginaVenta
---             (data/products.js y context/AuthContext.jsx): categorías,
---             productos, variantes con su stock, conexiones y cuentas de prueba.
---  BLOQUE 2 — datos de EJEMPLO del flujo de compra (el frontend los genera
---             en tiempo de ejecución; aquí siguen sus formatos y sus reglas
---             de pricing.js). Descuenta stock como completePurchase().
---             Se puede borrar este bloque si solo se quiere el catálogo.
---
---  Requiere haber ejecutado antes 01_estructura.sql.
---  Se puede volver a ejecutar: primero vacía todas las tablas.
--- =====================================================================
+--  PostgreSQL 15+ 
 
 BEGIN;
 
@@ -21,14 +8,9 @@ TRUNCATE TABLE evento, incidencia, pago, linea_pedido, pedido,
                variante_producto, conexion, producto, categoria, cliente
 RESTART IDENTITY CASCADE;
 
--- =====================================================================
--- BLOQUE 1 · DATOS MAESTROS (products.js, AuthContext.jsx)
--- =====================================================================
 
--- Categorías, productos y variantes (generado desde products.js) --------
--- Orden de categorías = orden del array CATEGORIES.
--- Cada producto tiene su variante base (finish/color, stock = product.stock)
--- y las de `variants`. Precio igual en todas las variantes.
+-- BLOQUE 1 · DATOS MAESTROS (products.js, AuthContext.jsx)
+
 INSERT INTO categoria (slug, nombre, descripcion, cta, imagen, orden) VALUES
 ('vinilos', 'Vinilos', 'Clásicos y modernos en el soporte que los hizo eternos.', 'Explorar vinilos', '/img/referencia/foto-6.webp', 1),
 ('tocadiscos', 'Tocadiscos', 'El ritual de poner un disco, de principio a fin.', 'Ver tocadiscos', '/img/referencia/foto-0.webp', 2),
@@ -164,8 +146,7 @@ FROM (VALUES
 ) AS v(codigo_producto, codigo, es_base, valor, sku, stock)
 JOIN producto p ON p.codigo = v.codigo_producto;
 
--- Conexiones: sacadas de specs.Conexión de cada producto -----------------
--- (p003 y los vinilos/accesorio no declaran Conexión en el frontend).
+-- Conexiones: sacadas de specs.Conexión de cada producto 
 INSERT INTO conexion (nombre) VALUES
 ('RCA'),
 ('USB'),
@@ -179,38 +160,27 @@ INSERT INTO conexion (nombre) VALUES
 INSERT INTO producto_conexion (id_producto, id_conexion)
 SELECT p.id_producto, c.id_conexion
 FROM (VALUES
-    ('p001', 'RCA'), ('p001', 'USB'),                                         -- 'RCA + USB'
-    ('p002', 'RCA'), ('p002', 'Bluetooth'),                                    -- 'RCA + Bluetooth'
-    ('p004', 'Óptica'), ('p004', 'Coaxial'), ('p004', 'RCA'), ('p004', 'Bluetooth'),  -- 'Óptica, coaxial, RCA, Bluetooth 5.0'
-    ('p005', 'Phono'), ('p005', 'RCA'), ('p005', 'USB'), ('p005', 'Bluetooth'),       -- 'Phono, RCA, USB, Bluetooth'
-    ('p006', 'Jack 3,5 mm'), ('p006', 'Jack 6,3 mm'),                         -- 'Jack 3,5 mm / 6,3 mm'
+    ('p001', 'RCA'), ('p001', 'USB'),                                        
+    ('p002', 'RCA'), ('p002', 'Bluetooth'),                                    
+    ('p004', 'Óptica'), ('p004', 'Coaxial'), ('p004', 'RCA'), ('p004', 'Bluetooth'),  
+    ('p005', 'Phono'), ('p005', 'RCA'), ('p005', 'USB'), ('p005', 'Bluetooth'),       
+    ('p006', 'Jack 3,5 mm'), ('p006', 'Jack 6,3 mm'),                        
     ('p007', 'Jack 3,5 mm'), ('p007', 'Jack 6,3 mm')
 ) AS v(codigo, conexion)
 JOIN producto p ON p.codigo = v.codigo
 JOIN conexion c ON c.nombre = v.conexion;
 
--- Cuentas de prueba (TEST_USERS de AuthContext.jsx) ----------------------
--- Contraseñas con hash bcrypt + sal (nunca en texto plano):
---   cliente@ucam.test / demo1234   (rol cliente)
---   admin@ucam.test   / admin1234  (rol admin)
--- fecha_creacion = joinedAt (primer inicio de sesión). El cliente demo
--- tiene descuento de bienvenida hasta descuento_bienvenida_hasta(fecha_creacion).
+-- Cuentas de prueba (TEST_USERS de AuthContext.jsx) 
+
 INSERT INTO cliente (nombre, apellidos, email, telefono, password_hash, registrado, rol, newsletter, fecha_creacion) VALUES
 ('Cliente Demo', NULL, 'cliente@ucam.test', NULL, crypt('demo1234',  gen_salt('bf')), TRUE, 'cliente', FALSE, '2026-09-25 10:00:00+02'),
 ('Admin Demo',   NULL, 'admin@ucam.test',   NULL, crypt('admin1234', gen_salt('bf')), TRUE, 'admin',   FALSE, '2026-09-01 10:00:00+02');
 
--- =====================================================================
 -- BLOQUE 2 · DATOS DE EJEMPLO (flujo completo de compra)
---   Reglas de pricing.js: IVA 21 % incluido; envío 6,90 € (gratis si
---   subtotal - descuento >= 300 €); 10 % de descuento a rol 'cliente'
---   durante el mes natural posterior al alta. Los invitados no tienen descuento.
--- =====================================================================
 
--- Cliente invitado (Checkout sin sesión: customer.guest = true, con newsletter marcado)
 INSERT INTO cliente (nombre, apellidos, email, telefono, password_hash, registrado, rol, newsletter, fecha_creacion) VALUES
 ('Marta', 'Ruiz López', 'marta.ruiz@example.com', '612 345 678', NULL, FALSE, 'cliente', TRUE, '2026-09-28 20:10:00+02');
 
--- Carritos: tres ya convertidos en pedido y uno activo (ids 1-4 por RESTART IDENTITY)
 INSERT INTO carrito (id_cliente, estado, fecha_creacion, fecha_actualizacion) VALUES
 ((SELECT id_cliente FROM cliente WHERE email = 'cliente@ucam.test'),        'CONVERTIDO', '2026-09-26 18:48:00+02', '2026-09-26 19:05:00+02'),
 ((SELECT id_cliente FROM cliente WHERE email = 'cliente@ucam.test'),        'CONVERTIDO', '2026-09-29 12:05:00+02', '2026-09-29 12:30:00+02'),
@@ -230,11 +200,7 @@ FROM (VALUES
 ) AS v(id_carrito, sku, cantidad)
 JOIN variante_producto vp ON vp.sku = v.sku;
 
--- Pedidos (importes = computeTotals de pricing.js, comprobados con node).
--- Los números son explícitos; al final se ajusta la secuencia para que el próximo sea UC-AAAA-01004.
--- UC-2026-01001 · cliente demo: 349,00 + 44,99 = 393,99 · -39,40 (10 %) · envío gratis = 354,59
--- UC-2026-01002 · cliente demo: 149,00 + 2 x 24,90 = 198,80 · -19,88 · envío 6,90 = 185,82
--- UC-2026-01003 · invitada:     129,00 + 27,99 = 156,99 · sin descuento · envío 6,90 = 163,89
+
 INSERT INTO pedido (numero_pedido, id_cliente, id_carrito, estado,
                     envio_nombre, envio_email, envio_telefono, envio_direccion, envio_ciudad,
                     envio_provincia, envio_codigopostal, envio_pais,
@@ -272,7 +238,6 @@ JOIN pedido            pe ON pe.numero_pedido = v.numero_pedido
 JOIN variante_producto vp ON vp.sku           = v.sku
 JOIN producto          p  ON p.id_producto    = vp.id_producto;
 
--- Pagos simulados (registerPayment: method paypal_simulado, result approved)
 INSERT INTO pago (id_pedido, metodo, importe, resultado, referencia_pago, fecha_creacion)
 SELECT pe.id_pedido, 'paypal_simulado', pe.total, 'approved', v.ref, pe.fecha_creacion
 FROM (VALUES
@@ -282,7 +247,6 @@ FROM (VALUES
 ) AS v(numero_pedido, ref)
 JOIN pedido pe ON pe.numero_pedido = v.numero_pedido;
 
--- Stock: completePurchase() descuenta cada línea del stock de su variante
 UPDATE variante_producto v
 SET stock = v.stock - s.unidades
 FROM (SELECT lp.id_variante, sum(lp.cantidad) AS unidades
@@ -292,7 +256,6 @@ FROM (SELECT lp.id_variante, sum(lp.cantidad) AS unidades
       GROUP BY lp.id_variante) s
 WHERE v.id_variante = s.id_variante;
 
--- Incidencias (tickets de Soporte: pedido opcional, sin sesión)
 INSERT INTO incidencia (referencia, id_pedido, numero_pedido_indicado, nombre_contacto, email_contacto,
                         asunto, descripcion, estado, fecha_creacion)
 VALUES
@@ -303,12 +266,10 @@ VALUES
  'Ana Ficticia', 'cliente@ucam.test', 'Consulta de compatibilidad',
  '¿El tocadiscos Sony PS-LX310BT funciona con los monitores Edifier R1280DB?', 'abierta', '2026-09-30 09:15:00+02');
 
--- Eventos: mismo formato que trackEvent() (tipo, sesión, usuario, payload).
--- Usuario NULL = visitante anónimo (invitado).
+
 INSERT INTO evento (id_cliente, id_producto, id_pedido, id_sesion_web, tipo, fecha_creacion, datos_adicionales)
 SELECT c.id_cliente, p.id_producto, pe.id_pedido, v.sesion, v.tipo, v.fecha::timestamptz, v.datos::jsonb
 FROM (VALUES
-    -- Pedido UC-2026-01001 (cliente demo)
     ('cliente@ucam.test', 'p001', NULL,            'ses_k3m9x2ab', 'product.viewed',       '2026-09-26 18:48:00+02', '{"productId":"p001","sku":"AT-LP120XUSB","category":"tocadiscos"}'),
     ('cliente@ucam.test', 'p001', NULL,            'ses_k3m9x2ab', 'cart.item_added',      '2026-09-26 18:50:00+02', '{"productId":"p001","sku":"AT-LP120XUSB","variantId":null,"variantType":"Acabado","variantValue":"Negro mate","qty":1,"price":349}'),
     ('cliente@ucam.test', 'p008', NULL,            'ses_k3m9x2ab', 'product.viewed',       '2026-09-26 18:52:00+02', '{"productId":"p008","sku":"VIN-DSOTM-50","category":"vinilos"}'),
