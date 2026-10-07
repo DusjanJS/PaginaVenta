@@ -22,7 +22,6 @@ function Producto() {
   const [added, setAdded] = useState(false)
   const [selectedVariantId, setSelectedVariantId] = useState(null)
 
-  // Registrar evento de visualización del producto
   useEffect(() => {
     if (product) {
       trackEvent('product.viewed', {
@@ -33,7 +32,6 @@ function Producto() {
     }
   }, [product])
 
-  // Producto no encontrado
   if (!product) {
     return (
       <section className="section section-cream page-top">
@@ -55,7 +53,6 @@ function Producto() {
     (c) => c.slug === product.category
   )
 
-  // Productos relacionados obtenidos también desde el backend
   const related = productosBackend
     .filter(
       (p) =>
