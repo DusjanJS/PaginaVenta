@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { obtenerProductos } from '../services/productos.js'
 
-// Único punto donde se pide el catálogo al backend. El resto de la web lo lee de aquí.
 const ProductsContext = createContext(null)
 
 export const useProducts = () => useContext(ProductsContext)
