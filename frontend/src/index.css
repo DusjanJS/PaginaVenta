@@ -1,17 +1,16 @@
-/* ============ TOKENS (colores tomados del borrador) ============ */
 :root {
-  --ink: #1c1917;          /* fondo header / secciones oscuras */
+  --ink: #1c1917;          
   --ink-2: #26211e;
-  --accent: #c85a27;       /* naranja UCAM Stereo */
+  --accent: #c85a27;      
   --accent-dark: #a94a1e;
-  --cream: #f5f0e8;        /* fondo destacados */
-  --light: #faf6f1;        /* fondo secciones claras */
+  --cream: #f5f0e8;        
+  --light: #faf6f1;       
   --card: #ffffff;
   --line: #e8e1d6;
   --text: #1c1917;
   --muted: #6b6560;
-  --nav: #d6d0c7;          /* enlaces de navegación */
-  --gold: #b8892e;         /* estrellas */
+  --nav: #d6d0c7;          
+  --gold: #b8892e;        
   --serif: 'Playfair Display', Georgia, serif;
   --sans: 'Inter', system-ui, -apple-system, sans-serif;
   --radius: 16px;
@@ -34,7 +33,6 @@ code { font-family: ui-monospace, Menlo, monospace; font-size: 0.85em; backgroun
 .container.narrow { max-width: 820px; }
 .muted { color: var(--muted); font-size: 14px; }
 
-/* ============ BANNER PROTOTIPO ============ */
 .proto-banner { background: var(--accent); color: #fff; text-align: center; font-size: 12.5px; font-weight: 500; padding: 6px 16px; }
 
 /* ============ HEADER ============ */
