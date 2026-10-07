@@ -1,6 +1,3 @@
---  UCAM STEREO — PARTE 2: DATOS (INSERT)                    v5
---  PostgreSQL 15+ 
-
 BEGIN;
 
 TRUNCATE TABLE evento, incidencia, pago, linea_pedido, pedido,
@@ -9,7 +6,6 @@ TRUNCATE TABLE evento, incidencia, pago, linea_pedido, pedido,
 RESTART IDENTITY CASCADE;
 
 
--- BLOQUE 1 · DATOS MAESTROS (products.js, AuthContext.jsx)
 
 INSERT INTO categoria (slug, nombre, descripcion, cta, imagen, orden) VALUES
 ('vinilos', 'Vinilos', 'Clásicos y modernos en el soporte que los hizo eternos.', 'Explorar vinilos', '/img/referencia/foto-6.webp', 1),
@@ -20,7 +16,6 @@ INSERT INTO categoria (slug, nombre, descripcion, cta, imagen, orden) VALUES
 INSERT INTO producto (id_categoria, codigo, slug, nombre, marca, descripcion, tipo_variante, precio, imagen,
                       caracteristicas, especificaciones, compatibilidad, valoracion, num_resenas, etiqueta, destacado)
 VALUES
--- p001 · Audio-Technica AT-LP120XUSB
 ((SELECT id_categoria FROM categoria WHERE slug = 'tocadiscos'),
  'p001', 'audio-technica-at-lp120xusb', 'AT-LP120XUSB', 'Audio-Technica',
  'Tocadiscos de tracción directa con salida USB para digitalizar tu colección. Plato de aluminio, control de tono y pitch ajustable.',
@@ -30,7 +25,6 @@ VALUES
  'Compatible con amplificadores y altavoces activos con entrada RCA o línea.',
  5, 234, 'Más vendido', TRUE),
 
--- p002 · Sony PS-LX310BT
 ((SELECT id_categoria FROM categoria WHERE slug = 'tocadiscos'),
  'p002', 'sony-ps-lx310bt', 'PS-LX310BT', 'Sony',
  'Tocadiscos automático de correa con Bluetooth para enviar el sonido a auriculares o altavoces inalámbricos.',
@@ -40,7 +34,6 @@ VALUES
  'Compatible con altavoces y auriculares Bluetooth.',
  4, 189, NULL, TRUE),
 
--- p003 · Pro-Ject Debut Carbon EVO
 ((SELECT id_categoria FROM categoria WHERE slug = 'tocadiscos'),
  'p003', 'pro-ject-debut-carbon-evo', 'Debut Carbon EVO', 'Pro-Ject',
  'Brazo de carbono de una pieza, plato de 8 mm con alta inercia y cápsula Sumiko Rainier premontada. Cambio de velocidad electrónico.',
@@ -50,7 +43,6 @@ VALUES
  'Requiere preamplificador phono si el amplificador no lo incluye.',
  5, 97, 'Premium', TRUE),
 
--- p004 · Edifier R1280DB
 ((SELECT id_categoria FROM categoria WHERE slug = 'altavoces'),
  'p004', 'edifier-r1280db', 'R1280DB', 'Edifier',
  'Monitores activos de estantería con entradas ópticas, coaxiales, RCA y Bluetooth. Acabado en madera y mando a distancia.',
@@ -60,7 +52,6 @@ VALUES
  'Compatible con cualquier tocadiscos con preamplificador integrado.',
  5, 312, NULL, TRUE),
 
--- p005 · Klipsch R-41PM
 ((SELECT id_categoria FROM categoria WHERE slug = 'altavoces'),
  'p005', 'klipsch-r-41pm', 'R-41PM', 'Klipsch',
  'Altavoces amplificados con bocina Tractrix y woofer de cobre de 4". Entrada phono integrada para conectar el tocadiscos directamente.',
@@ -70,7 +61,6 @@ VALUES
  'Entrada phono: conecta tocadiscos sin preamplificador.',
  5, 141, 'Últimas 2', TRUE),
 
--- p006 · Meze Audio 99 Classics
 ((SELECT id_categoria FROM categoria WHERE slug = 'auriculares'),
  'p006', 'meze-99-classics', '99 Classics', 'Meze Audio',
  'Auriculares cerrados con almohadillas de piel y estructura de nogal. Cable desmontable, sonido cálido y musical.',
@@ -80,7 +70,6 @@ VALUES
  'Compatible con amplificadores de auriculares y salidas de 3,5 mm.',
  5, 88, 'Premium', TRUE),
 
--- p007 · Sennheiser HD 599
 ((SELECT id_categoria FROM categoria WHERE slug = 'auriculares'),
  'p007', 'sennheiser-hd-599', 'HD 599', 'Sennheiser',
  'Auriculares abiertos de referencia para escucha larga y cómoda. Sonido amplio y natural.',
@@ -90,7 +79,6 @@ VALUES
  'Compatible con cualquier amplificador o salida de auriculares.',
  4, 203, NULL, FALSE),
 
--- p008 · Pink Floyd The Dark Side of the Moon (50 Aniversario)
 ((SELECT id_categoria FROM categoria WHERE slug = 'vinilos'),
  'p008', 'dark-side-of-the-moon-50-aniversario', 'The Dark Side of the Moon (50 Aniversario)', 'Pink Floyd',
  'Reedición en vinilo de 180 g del álbum de 1973 en vinilo de colores, con póster y pegatinas.',
@@ -100,7 +88,6 @@ VALUES
  'Reproducible a 33 1/3 rpm en cualquier tocadiscos.',
  5, 176, 'Edición limitada', TRUE),
 
--- p009 · Miles Davis Kind of Blue
 ((SELECT id_categoria FROM categoria WHERE slug = 'vinilos'),
  'p009', 'kind-of-blue-vinilo', 'Kind of Blue', 'Miles Davis',
  'Clásico del jazz modal en vinilo de 180 g con prensado de alta fidelidad.',
@@ -110,7 +97,6 @@ VALUES
  'Reproducible a 33 1/3 rpm en cualquier tocadiscos.',
  5, 121, 'Vintage', FALSE),
 
--- p010 · UCAM Stereo Kit de limpieza para vinilos
 ((SELECT id_categoria FROM categoria WHERE slug = 'vinilos'),
  'p010', 'kit-limpieza-vinilos', 'Kit de limpieza para vinilos', 'UCAM Stereo',
  'Cepillo de fibra de carbono, líquido limpiador de 250 ml y paño de microfibra.',
@@ -146,7 +132,6 @@ FROM (VALUES
 ) AS v(codigo_producto, codigo, es_base, valor, sku, stock)
 JOIN producto p ON p.codigo = v.codigo_producto;
 
--- Conexiones: sacadas de specs.Conexión de cada producto 
 INSERT INTO conexion (nombre) VALUES
 ('RCA'),
 ('USB'),
@@ -170,13 +155,11 @@ FROM (VALUES
 JOIN producto p ON p.codigo = v.codigo
 JOIN conexion c ON c.nombre = v.conexion;
 
--- Cuentas de prueba (TEST_USERS de AuthContext.jsx) 
 
 INSERT INTO cliente (nombre, apellidos, email, telefono, password_hash, registrado, rol, newsletter, fecha_creacion) VALUES
 ('Cliente Demo', NULL, 'cliente@ucam.test', NULL, crypt('demo1234',  gen_salt('bf')), TRUE, 'cliente', FALSE, '2026-09-25 10:00:00+02'),
 ('Admin Demo',   NULL, 'admin@ucam.test',   NULL, crypt('admin1234', gen_salt('bf')), TRUE, 'admin',   FALSE, '2026-09-01 10:00:00+02');
 
--- BLOQUE 2 · DATOS DE EJEMPLO (flujo completo de compra)
 
 INSERT INTO cliente (nombre, apellidos, email, telefono, password_hash, registrado, rol, newsletter, fecha_creacion) VALUES
 ('Marta', 'Ruiz López', 'marta.ruiz@example.com', '612 345 678', NULL, FALSE, 'cliente', TRUE, '2026-09-28 20:10:00+02');
@@ -279,7 +262,7 @@ FROM (VALUES
     ('cliente@ucam.test', NULL,   'UC-2026-01001', 'ses_k3m9x2ab', 'payment.simulated',    '2026-09-26 19:05:00+02', '{"orderId":"UC-2026-01001","paymentId":"PAY-K3M9X2","result":"approved"}'),
     ('admin@ucam.test',   NULL,   'UC-2026-01001', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-27 09:00:00+02', '{"orderId":"UC-2026-01001","from":"pagado","to":"pendiente_preparacion"}'),
     ('admin@ucam.test',   NULL,   'UC-2026-01001', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-27 09:15:00+02', '{"orderId":"UC-2026-01001","from":"pendiente_preparacion","to":"enviado"}'),
-    -- Pedido UC-2026-01002 (cliente demo)
+   
     ('cliente@ucam.test', 'p004', NULL,            'ses_h5j2k9lm', 'product.viewed',       '2026-09-29 12:05:00+02', '{"productId":"p004","sku":"R1280DB","category":"altavoces"}'),
     ('cliente@ucam.test', 'p004', NULL,            'ses_h5j2k9lm', 'cart.item_added',      '2026-09-29 12:08:00+02', '{"productId":"p004","sku":"R1280DB-BK","variantId":"fresno-negro","variantType":"Acabado","variantValue":"Fresno negro","qty":1,"price":149}'),
     ('cliente@ucam.test', 'p010', NULL,            'ses_h5j2k9lm', 'product.viewed',       '2026-09-29 12:12:00+02', '{"productId":"p010","sku":"ACC-CLEAN-01","category":"vinilos"}'),
@@ -287,7 +270,7 @@ FROM (VALUES
     ('cliente@ucam.test', NULL,   NULL,            'ses_h5j2k9lm', 'checkout.started',     '2026-09-29 12:20:00+02', '{"items":2}'),
     ('cliente@ucam.test', NULL,   'UC-2026-01002', 'ses_h5j2k9lm', 'order.created',        '2026-09-29 12:30:00+02', '{"orderId":"UC-2026-01002","total":185.82,"lines":2}'),
     ('cliente@ucam.test', NULL,   'UC-2026-01002', 'ses_h5j2k9lm', 'payment.simulated',    '2026-09-29 12:30:00+02', '{"orderId":"UC-2026-01002","paymentId":"PAY-7QWE4R","result":"approved"}'),
-    -- Pedido UC-2026-01003 (invitada, sin usuario) + su incidencia
+    
     (NULL,               'p007', NULL,            'ses_b4n6v8cx', 'product.viewed',       '2026-09-28 19:40:00+02', '{"productId":"p007","sku":"HD-599","category":"auriculares"}'),
     (NULL,               'p007', NULL,            'ses_b4n6v8cx', 'cart.item_added',      '2026-09-28 19:43:00+02', '{"productId":"p007","sku":"HD-599","variantId":null,"variantType":"Color","variantValue":"Marfil y marrón","qty":1,"price":129}'),
     (NULL,               'p009', NULL,            'ses_b4n6v8cx', 'product.viewed',       '2026-09-28 19:47:00+02', '{"productId":"p009","sku":"VIN-KOB-180","category":"vinilos"}'),
@@ -297,7 +280,7 @@ FROM (VALUES
     (NULL,               NULL,   'UC-2026-01003', 'ses_b4n6v8cx', 'payment.simulated',    '2026-09-28 20:10:00+02', '{"orderId":"UC-2026-01003","paymentId":"PAY-ZX81LP","result":"approved"}'),
     (NULL,               NULL,   'UC-2026-01003', 'ses_b4n6v8cx', 'support.requested',    '2026-09-29 09:50:00+02', '{"ticketId":"INC-A1B2C3","orderId":"UC-2026-01003","subject":"Mi pedido no aparece como enviado"}'),
     ('admin@ucam.test',   NULL,   'UC-2026-01003', 'ses_q8w7e6rt', 'order.status_changed', '2026-09-29 10:00:00+02', '{"orderId":"UC-2026-01003","from":"pagado","to":"con_incidencia"}'),
-    -- Carrito activo y consulta de soporte sin pedido (cliente demo)
+   
     ('cliente@ucam.test', 'p005', NULL,            'ses_t1y2u3io', 'product.viewed',       '2026-09-30 08:38:00+02', '{"productId":"p005","sku":"R-41PM","category":"altavoces"}'),
     ('cliente@ucam.test', 'p005', NULL,            'ses_t1y2u3io', 'cart.item_added',      '2026-09-30 08:40:00+02', '{"productId":"p005","sku":"R-41PM","variantId":null,"variantType":"Acabado","variantValue":"Fresno negro","qty":1,"price":279}'),
     ('cliente@ucam.test', NULL,   NULL,            'ses_t1y2u3io', 'support.requested',    '2026-09-30 09:15:00+02', '{"ticketId":"INC-D4E5F6","orderId":null,"subject":"Consulta de compatibilidad"}')
