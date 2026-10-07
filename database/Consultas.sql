@@ -1,19 +1,9 @@
--- =====================================================================
---  UCAM STEREO — PARTE 3: CONSULTAS (mostrar información por pantalla)   v5
---  PostgreSQL 15+ / Supabase — Soluciones Informáticas para la Empresa
---
---  Solo lectura (SELECT). Requiere 01_estructura.sql y 02_datos.sql.
---  En el SQL Editor de Supabase, selecciona una consulta y pulsa
---  "Run selected" (si ejecutas todo, solo se ve el último resultado).
---  En psql:  \i 03_consultas.sql  muestra todos los resultados.
--- =====================================================================
+ -- CONSULTAS (mostrar información por pantalla)   v5
 
 
--- ---------------------------------------------------------------------
+
 -- A. CATÁLOGO
--- ---------------------------------------------------------------------
-
--- A1. Resumen de la base de datos: filas por tabla
+-- A1. Resumen de la base de datos:
 SELECT 'categoria' AS tabla, count(*) AS filas FROM categoria
 UNION ALL SELECT 'producto',          count(*) FROM producto
 UNION ALL SELECT 'variante_producto', count(*) FROM variante_producto
@@ -29,12 +19,12 @@ UNION ALL SELECT 'pago',              count(*) FROM pago
 UNION ALL SELECT 'incidencia',        count(*) FROM incidencia
 UNION ALL SELECT 'evento',            count(*) FROM evento;
 
--- A2. Categorías (en el orden de la web)
+-- A2. Categorías 
 SELECT orden, slug, nombre, cta, imagen
 FROM categoria
 ORDER BY orden;
 
--- A3. Catálogo completo con stock total (suma de sus variantes)
+-- A3. Catálogo completo con stock total 
 SELECT c.orden, c.nombre AS categoria, p.codigo, p.marca, p.nombre AS producto,
        p.precio AS precio_eur, p.stock_total, p.valoracion, p.num_resenas, p.etiqueta
 FROM v_catalogo p
@@ -42,7 +32,7 @@ JOIN categoria c ON c.slug = p.categoria
 WHERE p.activo
 ORDER BY c.orden, p.codigo;
 
--- A4. Productos destacados (portada)
+-- A4. Productos destacados 
 SELECT codigo, marca, nombre, precio, etiqueta
 FROM v_catalogo
 WHERE destacado AND activo
@@ -59,13 +49,13 @@ LEFT JOIN producto p USING (id_categoria)
 GROUP BY c.id_categoria, c.nombre, c.orden
 ORDER BY c.orden;
 
--- A6. Ficha de un producto (cambia el slug)
+-- A6. Ficha de un producto 
 SELECT p.nombre, p.marca, p.descripcion, p.precio, p.etiqueta,
        p.caracteristicas, p.especificaciones, p.compatibilidad
 FROM producto p
 WHERE p.slug = 'audio-technica-at-lp120xusb';
 
--- A7. Conexiones de cada producto (las que declara specs.Conexión)
+-- A7. Conexiones de cada producto 
 SELECT p.codigo, p.marca || ' ' || p.nombre AS producto,
        COALESCE(string_agg(co.nombre, ', ' ORDER BY co.nombre), '— (no declara conexiones)') AS conexiones
 FROM producto p
@@ -74,7 +64,7 @@ LEFT JOIN conexion co          USING (id_conexion)
 GROUP BY p.id_producto, p.codigo, p.marca, p.nombre
 ORDER BY p.codigo;
 
--- A8. Productos por conexión (p. ej. los que tienen Bluetooth)
+-- A8. Productos por conexión 
 SELECT p.marca || ' ' || p.nombre AS producto, p.precio
 FROM producto p
 JOIN producto_conexion pc USING (id_producto)
@@ -83,11 +73,8 @@ WHERE co.nombre = 'Bluetooth'
 ORDER BY p.precio;
 
 
--- ---------------------------------------------------------------------
 -- B. VARIANTES Y STOCK
--- ---------------------------------------------------------------------
-
--- B1. Variantes de cada producto (clave de carrito del frontend, valor, SKU y stock)
+-- B1. Variantes de cada producto 
 SELECT p.marca || ' ' || p.nombre AS producto,
        CASE WHEN v.es_base THEN p.codigo ELSE p.codigo || ':' || v.codigo END AS clave_carrito,
        p.tipo_variante AS tipo, v.valor, v.sku, v.es_base AS base, p.precio, v.stock
@@ -96,7 +83,7 @@ JOIN producto p USING (id_producto)
 WHERE v.activo
 ORDER BY p.codigo, v.es_base DESC, v.id_variante;
 
--- B2. Stock por producto: variante base, resto de variantes y total
+-- B2. Stock por producto:
 SELECT p.codigo, p.nombre,
        sum(v.stock) FILTER (WHERE v.es_base)     AS stock_base,
        sum(v.stock) FILTER (WHERE NOT v.es_base) AS stock_otras_variantes,
@@ -106,7 +93,7 @@ JOIN variante_producto v USING (id_producto)
 GROUP BY p.id_producto, p.codigo, p.nombre
 ORDER BY p.codigo;
 
--- B3. Stock bajo (≤ 5 unidades en alguna variante; el frontend marca "low" en ≤ 5)
+-- B3. Stock bajo (
 SELECT p.marca || ' ' || p.nombre AS producto, v.valor AS variante, v.sku, v.stock
 FROM variante_producto v
 JOIN producto p USING (id_producto)
@@ -114,11 +101,8 @@ WHERE v.stock <= 5
 ORDER BY v.stock, p.codigo;
 
 
--- ---------------------------------------------------------------------
 -- C. CLIENTES
--- ---------------------------------------------------------------------
-
--- C1. Clientes (sin mostrar el hash) y fin de su descuento de bienvenida
+-- C1. Clientes  y fin de su descuento de bienvenida
 SELECT id_cliente, nombre || COALESCE(' ' || apellidos, '') AS cliente, email, rol,
        registrado, newsletter, fecha_creacion AS alta,
        CASE WHEN rol = 'cliente' AND registrado THEN descuento_bienvenida_hasta(fecha_creacion) END AS descuento_hasta,
@@ -127,7 +111,7 @@ SELECT id_cliente, nombre || COALESCE(' ' || apellidos, '') AS cliente, email, r
 FROM cliente
 ORDER BY id_cliente;
 
--- C2. Comprobación de login (devuelve 1 fila si email y contraseña son correctos)
+-- C2. Comprobación de login 
 SELECT id_cliente, nombre, rol
 FROM cliente
 WHERE lower(email) = lower('cliente@ucam.test')
@@ -142,11 +126,7 @@ LEFT JOIN pedido pe USING (id_cliente)
 GROUP BY c.id_cliente, c.nombre, c.apellidos, c.email
 ORDER BY gasto_total DESC, c.id_cliente;
 
-
--- ---------------------------------------------------------------------
 -- D. CARRITOS
--- ---------------------------------------------------------------------
-
 -- D1. Contenido de los carritos
 SELECT ca.id_carrito, ca.estado,
        COALESCE(cl.email, '(anónimo)') AS cliente,
@@ -171,12 +151,10 @@ WHERE ca.estado = 'ACTIVO'
 GROUP BY ca.id_carrito, cl.email;
 
 
--- ---------------------------------------------------------------------
 -- E. PEDIDOS, LÍNEAS, PAGOS E INCIDENCIAS
--- ---------------------------------------------------------------------
+-- 
 
 -- E1. Pedidos con cliente, estado y desglose económico
---     (numero_visible = cómo lo muestran Confirmacion y Seguimiento)
 SELECT pe.numero_pedido, replace(pe.numero_pedido, 'UC-', 'UCS-') AS numero_visible,
        pe.estado, cl.email,
        pe.subtotal, pe.descuento, pe.gastos_envio, pe.total,
@@ -187,13 +165,13 @@ FROM pedido pe
 JOIN cliente cl USING (id_cliente)
 ORDER BY pe.fecha_creacion;
 
--- E2. Datos de envío de cada pedido (customer del checkout)
+-- E2. Datos de envío de cada pedido 
 SELECT numero_pedido, envio_nombre, envio_email, envio_telefono, envio_direccion,
        envio_codigopostal, envio_ciudad, envio_provincia, envio_pais
 FROM pedido
 ORDER BY numero_pedido;
 
--- E3. Líneas de cada pedido (con la variante comprada)
+-- E3. Líneas de cada pedido 
 SELECT pe.numero_pedido, lp.marca, lp.nombre_producto,
        lp.variante_tipo || ': ' || lp.variante_valor AS variante,
        lp.precio_unitario, lp.cantidad, lp.subtotal_linea
@@ -209,7 +187,7 @@ FROM pedido pe
 LEFT JOIN pago pg USING (id_pedido)
 ORDER BY pe.numero_pedido;
 
--- E5. Incidencias abiertas o en curso (con o sin pedido)
+-- E5. Incidencias abiertas o en curso 
 SELECT i.referencia, COALESCE(i.numero_pedido_indicado, '(sin pedido)') AS pedido_indicado,
        pe.estado AS estado_pedido, i.nombre_contacto, i.email_contacto,
        i.asunto, i.estado, i.fecha_creacion::date AS fecha
@@ -218,7 +196,7 @@ LEFT JOIN pedido pe USING (id_pedido)
 WHERE i.estado IN ('abierta', 'en_curso')
 ORDER BY i.fecha_creacion;
 
--- E6. Ventas por categoría (solo pedidos no cancelados)
+-- E6. Ventas por categoría 
 SELECT c.nombre AS categoria,
        sum(lp.cantidad)       AS unidades,
        sum(lp.subtotal_linea) AS ventas_brutas
@@ -229,23 +207,19 @@ JOIN categoria c  ON c.id_categoria = p.id_categoria
 GROUP BY c.id_categoria, c.nombre
 ORDER BY ventas_brutas DESC;
 
--- E7. Facturación total (igual que el panel Admin: pedidos no cancelados)
+-- E7. Facturación total 
 SELECT count(*) AS pedidos, COALESCE(sum(total), 0) AS facturacion_simulada
 FROM pedido
 WHERE estado <> 'cancelado';
 
-
--- ---------------------------------------------------------------------
 -- F. EVENTOS (trazabilidad)
--- ---------------------------------------------------------------------
-
 -- F1. Número de eventos por tipo
 SELECT tipo, count(*) AS total
 FROM evento
 GROUP BY tipo
 ORDER BY total DESC, tipo;
 
--- F2. Recorrido completo ordenado en el tiempo (usuario NULL = visitante anónimo)
+-- F2. Recorrido completo ordenado en el tiempo
 SELECT e.fecha_creacion::timestamp(0) AS momento, e.id_sesion_web AS sesion,
        COALESCE(cl.email, '(anónimo)') AS usuario, e.tipo,
        COALESCE(p.codigo, '') AS producto,
@@ -257,7 +231,7 @@ LEFT JOIN producto p  ON p.id_producto = e.id_producto
 LEFT JOIN pedido   pe ON pe.id_pedido  = e.id_pedido
 ORDER BY e.fecha_creacion, e.id_evento;
 
--- F3. Embudo de conversión: visitas → carrito → checkout → pedido
+-- F3. Embudo de conversión
 SELECT
     count(*) FILTER (WHERE tipo = 'product.viewed')       AS productos_vistos,
     count(*) FILTER (WHERE tipo = 'cart.item_added')      AS anadidos_al_carrito,
@@ -276,7 +250,7 @@ WHERE e.tipo = 'product.viewed'
 GROUP BY p.id_producto, p.marca, p.nombre
 ORDER BY visitas DESC, producto;
 
--- F5. Variantes más añadidas al carrito (desde el payload del evento)
+-- F5. Variantes más añadidas al carrito 
 SELECT e.datos_adicionales ->> 'sku'          AS sku,
        e.datos_adicionales ->> 'variantValue' AS variante,
        sum((e.datos_adicionales ->> 'qty')::int) AS unidades
@@ -285,7 +259,7 @@ WHERE e.tipo = 'cart.item_added'
 GROUP BY 1, 2
 ORDER BY unidades DESC, sku;
 
--- F6. Historial de estados de cada pedido (cambios hechos desde el panel Admin)
+-- F6. Historial de estados de cada pedido 
 SELECT e.fecha_creacion::timestamp(0) AS momento,
        e.datos_adicionales ->> 'orderId' AS pedido,
        e.datos_adicionales ->> 'from'    AS desde,
@@ -297,10 +271,7 @@ WHERE e.tipo = 'order.status_changed'
 ORDER BY e.fecha_creacion;
 
 
--- ---------------------------------------------------------------------
--- G. VERIFICACIONES DE COHERENCIA (todas deben devolver OK / 0 filas)
--- ---------------------------------------------------------------------
-
+-- G. VERIFICACIONES DE COHERENCIA 
 -- G1. El subtotal de cada pedido es la suma de sus líneas
 SELECT pe.numero_pedido, pe.subtotal, sum(lp.subtotal_linea) AS suma_lineas,
        CASE WHEN pe.subtotal = sum(lp.subtotal_linea) THEN 'OK' ELSE 'ERROR' END AS resultado
@@ -309,9 +280,7 @@ JOIN linea_pedido lp USING (id_pedido)
 GROUP BY pe.id_pedido, pe.numero_pedido, pe.subtotal
 ORDER BY pe.numero_pedido;
 
--- G2. Cada pedido pagado (y en preparación, enviado o entregado) tiene su pago aprobado
---     por el importe del pedido. 'con_incidencia' y 'cancelado' se excluyen: pueden
---     ser pedidos con pago rechazado.
+-- G2. Cada pedido pagado 
 SELECT pe.numero_pedido, pe.estado, pe.total, pg.importe
 FROM pedido pe
 LEFT JOIN pago pg ON pg.id_pedido = pe.id_pedido AND pg.resultado = 'approved'
@@ -335,8 +304,6 @@ GROUP BY p.id_producto, p.codigo
 HAVING count(*) FILTER (WHERE v.es_base) <> 1;
 
 -- G5. Si un pedido tiene cambios de estado registrados, el actual coincide con el último.
---     (Solo se revisan pedidos con algún evento order.status_changed: registerPayment
--- fija 'pagado' o 'con_incidencia' sin generar ese evento.)
 SELECT pe.numero_pedido, pe.estado AS estado_actual, u.hasta AS ultimo_cambio_registrado
 FROM pedido pe
 JOIN LATERAL (
@@ -349,7 +316,6 @@ JOIN LATERAL (
 WHERE pe.estado <> u.hasta;
 
 -- G6. Próximo número de pedido que generará la base de datos
---     (is_called = false: la secuencia aún no se ha usado y el siguiente es last_value)
 SELECT 'UC-' || to_char(now(), 'YYYY') || '-'
        || lpad((CASE WHEN is_called THEN last_value + 1 ELSE last_value END)::text, 5, '0') AS proximo_numero_pedido
 FROM seq_numero_pedido;
